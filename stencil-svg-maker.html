@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>SVG Tracer — Stencil Sheet Maker</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;900&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #161616;
+  --surface2: #202020;
+  --border: #2c2c2c;
+  --accent: #e8ff00;
+  --accent2: #ff4400;
+  --text: #e0e0e0;
+  --muted: #666;
+  --green: #00e676;
+  --tap: 52px; /* minimum tap target */
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  min-height: 100dvh;
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ── HEADER ── */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  padding-top: max(12px, env(safe-area-inset-top));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.logo {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 17px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.logo em { color: var(--accent); font-style: normal; }
+.logo small {
+  display: block;
+  font-weight: 400;
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  margin-top: 2px;
+}
+
+/* Step pills */
+.steps {
+  display: flex;
+  gap: 4px;
+}
+.step-pill {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: all 0.25s;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.step-pill.active { background: var(--accent); border-color: var(--accent); color: #000; }
+.step-pill.done { background: rgba(0,230,118,0.15); border-color: var(--green); color: var(--green); }
+
+/* ── MAIN CONTENT ── */
+.content {
+  padding: 0 16px 24px;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+/* ── STEP CARD ── */
+.step-card {
+  margin-top: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: opacity 0.3s;
+}
+.step-card.inactive {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.card-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface2);
+}
+.card-num {
+  background: var(--accent);
+  color: #000;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.card-num.done { background: var(--green); }
+.card-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.card-body { padding: 16px; }
+
+/* ── DROP ZONE ── */
+.dropzone {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 32px 16px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  background: rgba(255,255,255,0.02);
+  transition: all 0.2s;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.dropzone.over {
+  border-color: var(--accent);
+  background: rgba(232,255,0,0.04);
+}
+.dropzone input[type=file] {
+  position: absolute; inset: 0;
+  opacity: 0; cursor: pointer;
+  width: 100%; height: 100%;
+  /* Allow camera on iOS */
+}
+.dz-icon { font-size: 42px; line-height: 1; }
+.dz-title { font-size: 13px; color: var(--text); font-weight: 600; }
+.dz-sub { font-size: 10px; color: var(--muted); }
+
+/* File loaded state */
+.file-loaded-bar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0,230,118,0.08);
+  border: 1px solid rgba(0,230,118,0.2);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 11px;
+  color: var(--green);
+  margin-top: 10px;
+}
+.file-loaded-bar .change-btn {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--muted);
+  text-decoration: underline;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+  padding: 0;
+}
+
+/* ── PREVIEW IMAGE ── */
+.img-preview-wrap {
+  display: none;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #222;
+  margin-bottom: 12px;
+  max-height: 200px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+#canvas-original {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  display: block;
+}
+
+/* ── CONTROLS ── */
+.ctrl { margin-bottom: 18px; }
+.ctrl:last-child { margin-bottom: 0; }
+.ctrl-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.ctrl-val {
+  color: var(--accent);
+  background: var(--bg);
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  min-width: 44px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Big touch-friendly slider */
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2px;
+  background: var(--border);
+  outline: none;
+  border-radius: 1px;
+  /* Larger touch area */
+  padding: 14px 0;
+  background-clip: content-box;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  transition: transform 0.1s;
+}
+input[type=range]:active::-webkit-slider-thumb { transform: scale(1.2); }
+input[type=range]::-moz-range-thumb {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+}
+
+/* ── CHIPS ── */
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+}
+.chip.active {
+  background: rgba(232,255,0,0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── TOGGLE ── */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+  min-height: var(--tap);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+  padding: 0 0 0 0;
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-label { flex: 1; padding: 14px 0; }
+
+/* iOS-style toggle */
+.toggle {
+  position: relative;
+  width: 44px; height: 26px;
+  flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: 13px;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.toggle input:checked + .toggle-track { background: var(--accent); }
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.toggle input:checked + .toggle-track::after { transform: translateX(18px); }
+
+/* ── BUTTONS ── */
+.btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 20px;
+  height: var(--tap);
+  border: none;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all 0.15s;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.btn:last-child { margin-bottom: 0; }
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:active { background: #f5ff4d; transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.25; }
+.btn-export { background: var(--accent2); color: #fff; }
+.btn-export:active { transform: scale(0.98); }
+.btn-export:disabled { opacity: 0.25; }
+.btn-ghost {
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--muted);
+}
+.btn-ghost:active { border-color: var(--text); color: var(--text); }
+
+/* ── SVG PREVIEW ── */
+.svg-preview-wrap {
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  margin-bottom: 14px;
+  position: relative;
+}
+#svg-display svg {
+  max-width: 100%;
+  max-height: 260px;
+  display: block;
+}
+.svg-empty {
+  color: #aaa;
+  font-size: 11px;
+  text-align: center;
+  padding: 40px;
+}
+
+/* ── VARIANTS SCROLL ── */
+.variants-scroll {
+  display: none;
+  overflow-x: auto;
+  gap: 10px;
+  padding-bottom: 4px;
+  margin-bottom: 14px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.variants-scroll::-webkit-scrollbar { display: none; }
+.variant-item {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.variant-thumb {
+  width: 80px; height: 80px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.variant-thumb:active { transform: scale(0.95); }
+.variant-thumb.selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,255,0,0.25); }
+.variant-thumb svg { width: 100%; height: 100%; }
+.variant-label { font-size: 9px; color: var(--muted); letter-spacing: 0.06em; }
+
+/* ── STATUS BAR ── */
+.status-bar {
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 10px 16px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  font-size: 10px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.status-bar .msg { flex: 1; }
+.status-bar .ok { color: var(--green); }
+.status-bar .processing { color: var(--accent); }
+.status-bar .err { color: var(--accent2); }
+.status-badge {
+  font-size: 9px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── SPINNER OVERLAY ── */
+.spinner-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(10,10,10,0.85);
+  z-index: 200;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.spinner-ring {
+  width: 44px; height: 44px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner-text { font-size: 12px; color: var(--accent); letter-spacing: 0.1em; }
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 14px 0;
+}
+
+/* Hint text */
+.hint { font-size: 10px; color: var(--muted); line-height: 1.7; margin-top: 10px; }
+.hint strong { color: var(--text); }
+
+/* Section label */
+.section-label {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  display: block;
+}
+</style>
+</head>
+<body>
+
+<!-- Spinner -->
+<div class="spinner-overlay" id="spinner">
+  <div class="spinner-ring"></div>
+  <div class="spinner-text">Tracing...</div>
+</div>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <em>SVG</em> Tracer
+    <small>for Stencil Sheet Maker</small>
+  </div>
+  <div class="steps">
+    <div class="step-pill active" id="sp1">1</div>
+    <div class="step-pill" id="sp2">2</div>
+    <div class="step-pill" id="sp3">3</div>
+  </div>
+</header>
+
+<div class="content">
+
+  <!-- ── STEP 1: Load Image ── -->
+  <div class="step-card" id="card1">
+    <div class="card-header">
+      <div class="card-num" id="cn1">1</div>
+      <div class="card-title">Load Image</div>
+    </div>
+    <div class="card-body">
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="file-input"
+          accept="image/png,image/jpeg,image/gif,image/webp,image/bmp"
+          capture="environment">
+        <span class="dz-icon">📷</span>
+        <div class="dz-title">Tap to select or capture</div>
+        <div class="dz-sub">PNG · JPG · WEBP · camera</div>
+      </div>
+      <div class="file-loaded-bar" id="file-loaded-bar">
+        <span>✓</span>
+        <span id="file-name-display" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span>
+        <button class="change-btn" onclick="changeFile()">Change</button>
+      </div>
+
+      <!-- Image preview -->
+      <div style="margin-top:12px;display:none" id="img-preview-wrap">
+        <canvas id="canvas-original" style="max-width:100%;border-radius:8px;display:block"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: Trace Settings ── -->
+  <div class="step-card inactive" id="card2">
+    <div class="card-header">
+      <div class="card-num" id="cn2">2</div>
+      <div class="card-title">Trace Settings</div>
+    </div>
+    <div class="card-body">
+
+      <span class="section-label">Threshold &amp; Detail</span>
+
+      <div class="ctrl">
+        <div class="ctrl-head">
+          Threshold
+          <span class="ctrl-val" id="v-thresh">128</span>
+        </div>
+        <input type="range" id="r-thresh" min="1" max="254" value="128">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-head">
+          Smoothing
+          <span class="ctrl-val" id="v-smooth">1.0</span>
+        </div>
+        <input type="range" id="r-smooth" min="0" max="50" value="10">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-head">
+          Min area (px²)
+          <span class="ctrl-val" id="v-minarea">40</span>
+        </div>
+        <input type="range" id="r-minarea" min="0" max="500" value="40" step="5">
+      </div>
+
+      <div class="divider"></div>
+      <span class="section-label">Variants</span>
+
+      <div class="chips" id="variant-chips" style="margin-bottom:14px">
+        <div class="chip active" data-n="3">3 variants</div>
+        <div class="chip" data-n="5">5 variants</div>
+        <div class="chip" data-n="7">7 variants</div>
+      </div>
+
+      <div class="divider"></div>
+      <span class="section-label">Options</span>
+
+      <div class="toggle-row">
+        <span class="toggle-label">Largest path only (remove islands)</span>
+        <label class="toggle">
+          <input type="checkbox" id="ck-largest" checked>
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Invert (trace light areas)</span>
+        <label class="toggle">
+          <input type="checkbox" id="ck-invert">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Bezier curves (smoother)</span>
+        <label class="toggle">
+          <input type="checkbox" id="ck-bezier" checked>
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+
+      <div style="margin-top:16px">
+        <button class="btn btn-primary" id="btn-trace" disabled onclick="runTrace()">
+          ✦ Trace Image
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: Result & Export ── -->
+  <div class="step-card inactive" id="card3">
+    <div class="card-header">
+      <div class="card-num" id="cn3">3</div>
+      <div class="card-title">Result &amp; Export</div>
+    </div>
+    <div class="card-body">
+
+      <!-- Variant thumbnails -->
+      <span class="section-label">Select variant</span>
+      <div class="variants-scroll" id="variants-scroll"></div>
+
+      <!-- SVG preview -->
+      <div class="svg-preview-wrap">
+        <div class="svg-empty" id="svg-empty">Trace result will appear here</div>
+        <div id="svg-display"></div>
+      </div>
+
+      <div class="divider"></div>
+      <span class="section-label">Output size</span>
+
+      <div class="chips" id="size-chips" style="margin-bottom:14px">
+        <div class="chip active" data-size="original">Original</div>
+        <div class="chip" data-size="100">100mm</div>
+        <div class="chip" data-size="50">50mm</div>
+      </div>
+
+      <button class="btn btn-export" id="btn-export" disabled onclick="exportSVG()">
+        ↓ Download default.svg
+      </button>
+
+      <div class="hint">
+        Save as <strong>default.svg</strong> and upload to<br>
+        MakerWorld Stencil Sheet Maker.
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- Status bar -->
+<div class="status-bar">
+  <span class="msg ok" id="st-msg">Load an image to start</span>
+  <span class="status-badge" id="st-badge">Ready</span>
+</div>
+
+<script>
+// ── State ──
+const S = {
+  imgEl: null,
+  imgW: 0, imgH: 0,
+  variants: [],
+  selectedVariant: 0,
+  variantCount: 3,
+  exportSize: 'original',
+};
+
+// ── Sliders ──
+function bindSlider(rid, vid, transform) {
+  const el = document.getElementById(rid);
+  const v  = document.getElementById(vid);
+  const update = () => {
+    const raw = parseFloat(el.value);
+    v.textContent = transform ? transform(raw) : raw;
+  };
+  el.addEventListener('input', update);
+  update();
+}
+bindSlider('r-thresh',  'v-thresh',  null);
+bindSlider('r-smooth',  'v-smooth',  v => (v / 10).toFixed(1));
+bindSlider('r-minarea', 'v-minarea', null);
+
+// ── Variant count chips ──
+document.querySelectorAll('#variant-chips .chip').forEach(c => {
+  c.addEventListener('click', () => {
+    document.querySelectorAll('#variant-chips .chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    S.variantCount = parseInt(c.dataset.n);
+  });
+});
+
+// ── Size chips ──
+document.querySelectorAll('#size-chips .chip').forEach(c => {
+  c.addEventListener('click', () => {
+    document.querySelectorAll('#size-chips .chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    S.exportSize = c.dataset.size;
+  });
+});
+
+// ── File load ──
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f) loadFile(f);
+});
+document.getElementById('file-input').addEventListener('change', e => {
+  if (e.target.files[0]) loadFile(e.target.files[0]);
+});
+
+function changeFile() {
+  document.getElementById('file-input').click();
+}
+
+function loadFile(file) {
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    S.imgEl = img;
+    S.imgW = img.naturalWidth;
+    S.imgH = img.naturalHeight;
+
+    // Canvas preview
+    const canvas = document.getElementById('canvas-original');
+    canvas.width  = S.imgW;
+    canvas.height = S.imgH;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    const wrap = document.getElementById('img-preview-wrap');
+    wrap.style.display = 'block';
+
+    // UI updates
+    document.getElementById('dropzone').style.display = 'none';
+    const bar = document.getElementById('file-loaded-bar');
+    bar.style.display = 'flex';
+    document.getElementById('file-name-display').textContent = file.name;
+    document.getElementById('btn-trace').disabled = false;
+
+    // Activate step 2
+    document.getElementById('card2').classList.remove('inactive');
+    setStepPill(2);
+    setMsg('ok', 'Image loaded — adjust settings and tap Trace');
+    setBadge(`${S.imgW}×${S.imgH}`);
+    URL.revokeObjectURL(url);
+  };
+  img.src = url;
+}
+
+// ── Trace ──
+async function runTrace() {
+  if (!S.imgEl) return;
+  showSpinner(true);
+  setMsg('processing', 'Tracing image...');
+
+  await new Promise(r => setTimeout(r, 40));
+
+  try {
+    const thresh  = parseInt(document.getElementById('r-thresh').value);
+    const smooth  = parseFloat(document.getElementById('r-smooth').value) / 10;
+    const minArea = parseInt(document.getElementById('r-minarea').value);
+    const invert  = document.getElementById('ck-invert').checked;
+    const bezier  = document.getElementById('ck-bezier').checked;
+    const largest = document.getElementById('ck-largest').checked;
+    const n = S.variantCount;
+
+    const thresholds = [];
+    const half = Math.floor(n / 2);
+    const step = Math.max(15, Math.floor(60 / Math.max(1, n - 1)));
+    for (let i = 0; i < n; i++) {
+      thresholds.push(Math.max(5, Math.min(250, thresh + (i - half) * step)));
+    }
+
+    S.variants = [];
+    for (const t of thresholds) {
+      S.variants.push({ ...traceImage(t, smooth, minArea, invert, bezier, largest), threshold: t });
+    }
+
+    S.selectedVariant = Math.floor(n / 2);
+    renderVariants();
+    showVariant(S.selectedVariant);
+
+    document.getElementById('card3').classList.remove('inactive');
+    document.getElementById('btn-export').disabled = false;
+    setStepPill(3);
+    setMsg('ok', `✓ ${n} variants ready — select and export`);
+    setBadge(`${S.variants[S.selectedVariant].pathCount} path(s)`);
+
+    // Scroll to result
+    setTimeout(() => {
+      document.getElementById('card3').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
+
+  } catch(e) {
+    setMsg('err', 'Error: ' + e.message);
+    console.error(e);
+  }
+  showSpinner(false);
+}
+
+// ── Core tracer ──
+function traceImage(threshold, smooth, minArea, invert, useBezier, largestOnly) {
+  const img = S.imgEl;
+  const W = img.naturalWidth, H = img.naturalHeight;
+
+  const offscreen = document.createElement('canvas');
+  offscreen.width = W; offscreen.height = H;
+  const ctx = offscreen.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  const data = ctx.getImageData(0, 0, W, H).data;
+
+  const bitmap = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) {
+    const r = data[i*4], g = data[i*4+1], b = data[i*4+2];
+    const gray = 0.299*r + 0.587*g + 0.114*b;
+    let fg = gray < threshold ? 1 : 0;
+    if (invert) fg = 1 - fg;
+    bitmap[i] = fg;
+  }
+
+  let paths = findContours(bitmap, W, H, minArea);
+
+  if (largestOnly && paths.length > 0) {
+    let maxA = -1, maxI = 0;
+    paths.forEach((p, i) => {
+      const a = Math.abs(polygonArea(p));
+      if (a > maxA) { maxA = a; maxI = i; }
+    });
+    paths = [paths[maxI]];
+  }
+
+  const smoothed  = paths.map(p => smoothPath(p, smooth));
+  const pathStrs  = smoothed.map(pts => useBezier ? toCubic(pts) : toLinear(pts));
+  return { svgStr: buildSVG(pathStrs, W, H), pathCount: paths.length, w: W, h: H };
+}
+
+function findContours(bitmap, W, H, minArea) {
+  const visited  = new Uint8Array(W * H);
+  const contours = [];
+  for (let y = 1; y < H-1; y++) {
+    for (let x = 1; x < W-1; x++) {
+      const idx = y*W+x;
+      if (!bitmap[idx] || visited[idx]) continue;
+      const edge = !bitmap[(y-1)*W+x] || !bitmap[(y+1)*W+x] ||
+                   !bitmap[y*W+x-1]   || !bitmap[y*W+x+1];
+      if (!edge) continue;
+      const c = traceContour(bitmap, visited, W, H, x, y);
+      if (c.length >= 4 && Math.abs(polygonArea(c)) >= minArea)
+        contours.push(c);
+    }
+  }
+  return contours;
+}
+
+function traceContour(bitmap, visited, W, H, sx, sy) {
+  const pts = [], dirs = [[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]];
+  let x=sx, y=sy, dir=0, steps=0, maxSteps=W*H;
+  do {
+    visited[y*W+x] = 1;
+    pts.push([x,y]);
+    let found=false;
+    for (let i=0;i<8;i++) {
+      const d=(dir+6+i)%8, nx=x+dirs[d][0], ny=y+dirs[d][1];
+      if (nx<0||nx>=W||ny<0||ny>=H) continue;
+      if (bitmap[ny*W+nx]) { x=nx; y=ny; dir=d; found=true; break; }
+    }
+    if (!found) break;
+  } while ((x!==sx||y!==sy) && ++steps<maxSteps);
+  return pts;
+}
+
+function polygonArea(pts) {
+  let a=0, n=pts.length;
+  for (let i=0;i<n;i++) {
+    const j=(i+1)%n;
+    a += pts[i][0]*pts[j][1] - pts[j][0]*pts[i][1];
+  }
+  return a/2;
+}
+
+function smoothPath(pts, iter) {
+  if (iter<=0) return pts;
+  let p=[...pts];
+  for (let it=0;it<Math.ceil(iter);it++) {
+    const out=[];
+    for (let i=0;i<p.length;i++) {
+      const pv=p[(i-1+p.length)%p.length], cu=p[i], nx=p[(i+1)%p.length];
+      out.push([(pv[0]+cu[0]*2+nx[0])/4, (pv[1]+cu[1]*2+nx[1])/4]);
+    }
+    p=out;
+  }
+  const stride=Math.max(1, Math.floor(p.length/120));
+  return p.filter((_,i)=>i%stride===0);
+}
+
+function toLinear(pts) {
+  if (!pts.length) return '';
+  let d=`M ${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
+  for (let i=1;i<pts.length;i++) d+=` L ${pts[i][0].toFixed(2)} ${pts[i][1].toFixed(2)}`;
+  return d+' Z';
+}
+
+function toCubic(pts) {
+  if (pts.length<2) return '';
+  const n=pts.length, t=0.3;
+  let d=`M ${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
+  for (let i=0;i<n;i++) {
+    const p0=pts[(i-1+n)%n], p1=pts[i], p2=pts[(i+1)%n], p3=pts[(i+2)%n];
+    const cp1x=p1[0]+(p2[0]-p0[0])*t, cp1y=p1[1]+(p2[1]-p0[1])*t;
+    const cp2x=p2[0]-(p3[0]-p1[0])*t, cp2y=p2[1]-(p3[1]-p1[1])*t;
+    d+=` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2[0].toFixed(2)} ${p2[1].toFixed(2)}`;
+  }
+  return d+' Z';
+}
+
+function buildSVG(pathStrs, w, h) {
+  const paths = pathStrs.map(d=>`  <path d="${d}" fill="black" fill-rule="evenodd"/>`).join('\n');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">\n${paths}\n</svg>`;
+}
+
+// ── Variants ──
+function renderVariants() {
+  const scroll = document.getElementById('variants-scroll');
+  scroll.innerHTML = '';
+  scroll.style.display = 'flex';
+
+  S.variants.forEach((v, i) => {
+    const item = document.createElement('div');
+    item.className = 'variant-item';
+
+    const thumb = document.createElement('div');
+    thumb.className = 'variant-thumb' + (i===S.selectedVariant?' selected':'');
+    thumb.innerHTML = v.svgStr;
+    thumb.addEventListener('click', () => {
+      document.querySelectorAll('.variant-thumb').forEach(t=>t.classList.remove('selected'));
+      thumb.classList.add('selected');
+      S.selectedVariant = i;
+      showVariant(i);
+    });
+
+    const label = document.createElement('div');
+    label.className = 'variant-label';
+    label.textContent = `T:${v.threshold}`;
+
+    item.appendChild(thumb);
+    item.appendChild(label);
+    scroll.appendChild(item);
+  });
+}
+
+function showVariant(idx) {
+  const v = S.variants[idx];
+  document.getElementById('svg-empty').style.display = 'none';
+  const disp = document.getElementById('svg-display');
+  disp.innerHTML = v.svgStr;
+  const svg = disp.querySelector('svg');
+  if (svg) { svg.style.maxWidth='100%'; svg.style.maxHeight='260px'; }
+  setBadge(`${v.pathCount} path(s)`);
+}
+
+// ── Export ──
+function exportSVG() {
+  const v = S.variants[S.selectedVariant];
+  if (!v) return;
+  let s = v.svgStr;
+  if (S.exportSize !== 'original') {
+    const tw = S.exportSize==='100' ? 100 : 50;
+    const th = ((v.h / v.w) * tw).toFixed(2);
+    s = s.replace(/width="[^"]*"/, `width="${tw}mm"`).replace(/height="[^"]*"/, `height="${th}mm"`);
+  }
+  s = s.replace('<svg ', '<!-- Stencil SVG Tracer — upload as default.svg -->\n<svg ');
+  const blob = new Blob([s], { type:'image/svg+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'default.svg';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  setMsg('ok', '✓ default.svg downloaded!');
+}
+
+// ── UI Helpers ──
+function showSpinner(show) {
+  document.getElementById('spinner').style.display = show ? 'flex' : 'none';
+}
+function setStepPill(active) {
+  [1,2,3].forEach(i => {
+    const el = document.getElementById('sp'+i);
+    el.className = 'step-pill' + (i===active?' active': i<active?' done':'');
+  });
+}
+function setMsg(type, msg) {
+  const el = document.getElementById('st-msg');
+  el.textContent = msg;
+  el.className = 'msg ' + type;
+}
+function setBadge(text) {
+  document.getElementById('st-badge').textContent = text;
+}
+</script>
+</body>
+</html>
