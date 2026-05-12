@@ -217,14 +217,18 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
     </div>
   </div>
 
-  <!-- ── CARD 2: Trace Settings ── -->
+  <!-- ── CARD 2: Trace Settings（折りたたみ可能） ── -->
   <div class="step-card inactive" id="card2">
-    <div class="card-header">
-      <div class="card-num" id="cn2">2</div>
-      <div class="card-title">Trace Settings</div>
-      <span class="card-subtitle">設定変更→再トレース</span>
-    </div>
-    <div class="card-body">
+    <details id="trace-details">
+      <summary style="list-style:none;cursor:pointer">
+        <div class="card-header" style="border-bottom:none">
+          <div class="card-num" id="cn2">2</div>
+          <div class="card-title">Trace Settings</div>
+          <span class="card-subtitle">タップで開く／閉じる</span>
+          <span id="trace-arrow" style="margin-left:8px;color:var(--muted);font-size:12px;transition:transform .2s">▼</span>
+        </div>
+      </summary>
+      <div class="card-body" style="border-top:1px solid var(--border)">
       <span class="section-label">輪郭検出の調整</span>
 
       <div class="ctrl">
@@ -298,7 +302,8 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
           ↺ 設定を変えて再トレース
         </button>
       </div>
-    </div>
+      </div>
+    </details>
   </div>
 
   <!-- ── CARD 4: Gemini AI Enhance ── -->
@@ -717,10 +722,8 @@ Style: ${styleHint}`;
     setGeminiStep(3, 'active');
     let imageGenOk = false;
     try {
-      // Use custom debug prompt if provided, otherwise use style defaults
       const debugPromptEl = document.getElementById('debug-prompt');
       const customPrompt  = debugPromptEl ? debugPromptEl.value.trim() : '';
-
       const imgPrompt = customPrompt || (
         S.geminiStyle === 'bold'
           ? 'Convert to bold black silhouette on pure white. Keep only main shape, remove all detail, texture, shadow.'
@@ -744,25 +747,42 @@ Style: ${styleHint}`;
         }
       );
 
-      if (igResp.ok) {
-        const igData = await igResp.json();
-        for (const part of (igData?.candidates?.[0]?.content?.parts || [])) {
+      // Always parse body regardless of status (needed for error details)
+      const igData = await igResp.json().catch(() => null);
+      console.log('[Gemini Stage3] status:', igResp.status,
+                  'keys:', Object.keys(igData || {}).join(','));
+
+      if (!igResp.ok) {
+        const errMsg = igData?.error?.message || `HTTP ${igResp.status}`;
+        showDebugInfo(`画像生成エラー: ${errMsg}`);
+        console.warn('[Gemini Stage3] error:', errMsg);
+      } else {
+        const parts = igData?.candidates?.[0]?.content?.parts || [];
+        let foundImg = false;
+        for (const part of parts) {
           if (part.inline_data?.data) {
-            // Show debug image before tracing
+            // Show Gemini output image in debug panel BEFORE tracing
             showDebugImage(part.inline_data.data, part.inline_data.mime_type || 'image/png');
             await traceFromBase64(part.inline_data.data, part.inline_data.mime_type || 'image/png');
             imageGenOk = true;
+            foundImg = true;
             break;
           }
         }
+        if (!foundImg) {
+          const textReply = parts.find(p => p.text)?.text || '（画像なし）';
+          console.warn('[Gemini Stage3] No image part. Reply:', textReply.slice(0, 120));
+          showDebugInfo(`画像生成モデルが画像を返しませんでした。\nモデル応答: ${textReply.slice(0, 100)}`);
+        }
       }
     } catch(e) {
-      console.warn('Image generation skipped:', e.message);
+      console.warn('[Gemini Stage3] exception:', e.message);
+      showDebugInfo(`例外: ${e.message}`);
     }
     setGeminiStep(3, 'done');
     setGeminiStep(4, 'done');
 
-    // Render final result
+    // Always render — Stage2 result is used if Stage3 didn't produce an image
     renderVariants();
     showVariant(0);
     showResultCard();
@@ -879,6 +899,7 @@ let _debugImgBase64 = null;
 let _debugImgMime   = null;
 
 function showDebugImage(base64, mime) {
+  if (!base64) return;
   _debugImgBase64 = base64;
   _debugImgMime   = mime;
   const wrap  = document.getElementById('debug-img-wrap');
@@ -886,7 +907,21 @@ function showDebugImage(base64, mime) {
   const img   = document.getElementById('debug-gemini-img');
   const label = document.getElementById('debug-img-label');
   img.src     = `data:${mime};base64,${base64}`;
+  img.style.display = 'block';
   label.textContent = `Gemini出力 (${mime}) — トレース前の清書画像`;
+  wrap.style.display  = 'block';
+  empty.style.display = 'none';
+  document.getElementById('debug-section').open = true;
+}
+
+// Show text-only message in debug panel (when no image is returned)
+function showDebugInfo(message) {
+  const wrap  = document.getElementById('debug-img-wrap');
+  const empty = document.getElementById('debug-img-empty');
+  const label = document.getElementById('debug-img-label');
+  const img   = document.getElementById('debug-gemini-img');
+  img.style.display   = 'none';
+  label.textContent   = message;
   wrap.style.display  = 'block';
   empty.style.display = 'none';
   document.getElementById('debug-section').open = true;
