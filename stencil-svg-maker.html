@@ -448,8 +448,9 @@ const S = {
 const TRACE_DIM = 400;
 // Vision analysis model (text output)
 const GEMINI_VISION_MODEL = 'gemini-2.5-flash';
-// Image generation model (image output)
-const GEMINI_IMAGE_MODEL  = 'gemini-2.5-flash-image';
+// Image generation — use the preview model that supports image editing
+// gemini-2.0-flash-preview-image-generation supports image-in / image-out
+const GEMINI_IMAGE_MODEL  = 'gemini-2.0-flash-preview-image-generation';
 
 // ============================================================
 // INIT — sliders & chips
@@ -726,10 +727,10 @@ Style: ${styleHint}`;
       const customPrompt  = debugPromptEl ? debugPromptEl.value.trim() : '';
       const imgPrompt = customPrompt || (
         S.geminiStyle === 'bold'
-          ? 'Convert to bold black silhouette on pure white. Keep only main shape, remove all detail, texture, shadow.'
+          ? 'Convert this illustration to a stencil design. Use solid black fills for dark areas (hair, hat, clothing). Use bold black outlines for the face and body contours on white background. Remove all colors. Style: flat graphic icon, like a bold pictogram. Pure black and white only.'
           : S.geminiStyle === 'fine'
-          ? 'Convert to precise black outlines on pure white. Preserve fine details, remove color/gradient/texture.'
-          : 'Convert to clean black stencil on pure white. Keep main outline, remove background/shadow/gradient/texture.'
+          ? 'Convert this illustration to a precise stencil. Trace all outlines and details in black on white background. Remove all colors and gradients. Keep fine details like eyes, mouth, small features. Style: detailed black line art on white.'
+          : 'Convert this illustration to a stencil design. Solid black fills for hair, hat, dark clothing. Clean black outlines for face, body, facial features on white background. Remove all colors and textures. Style: flat black and white graphic, like a spray-paint stencil. The result should look like the image has been converted to a two-tone black/white graphic suitable for cutting out as a stencil.'
       );
 
       const igResp = await fetch(
@@ -739,10 +740,14 @@ Style: ${styleHint}`;
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [
-              { text: imgPrompt },
-              { inline_data: { mime_type: 'image/jpeg', data: S.imgBase64 } }
+              { inline_data: { mime_type: 'image/jpeg', data: S.imgBase64 } },
+              { text: imgPrompt }
             ]}],
-            generation_config: { response_modalities: ['TEXT','IMAGE'], temperature: 0.1 }
+            // gemini-2.0-flash-preview-image-generation requires this exact format
+            generation_config: {
+              response_modalities: ['IMAGE'],
+              temperature: 1.0
+            }
           })
         }
       );
@@ -964,6 +969,7 @@ async function retracDebugImg() {
 // ============================================================
 function extractBoundary(pts) {
   if (pts.length === 0) return [];
+  if (pts.length < 3)   return pts;
 
   // Build a pixel set for O(1) lookup
   const set = new Set(pts.map(([x,y]) => `${x},${y}`));
@@ -976,26 +982,33 @@ function extractBoundary(pts) {
   }
 
   // 8-connected clockwise: E SE S SW W NW N NE
-  const DX = [1, 1, 0,-1,-1,-1, 0, 1];
-  const DY = [0, 1, 1, 1, 0,-1,-1,-1];
+  const DX = [ 1, 1, 0,-1,-1,-1, 0, 1];
+  const DY = [ 0, 1, 1, 1, 0,-1,-1,-1];
+
+  // The start pixel is topmost-leftmost, so it has no foreground pixel
+  // directly above or to the upper-left.
+  // We start searching from direction NW (dir=5) going clockwise,
+  // which is equivalent to "we came from the left (W=4), so left-turn = dir 5"
+  // BUT: the correct Jacob's start is to look from the background pixel
+  // we entered from. Since sx,sy is the topmost pixel, we "came from" above (N=6).
+  // Left-turn from N = start search from NW+1 = W (dir=4).
+  // Use entryDir=6 (came from North) so search starts at (6+5)%8 = 3 = SW.
 
   const contour = [];
   let cx = sx, cy = sy;
-  // We "arrived" from the left (W=dir4), so entry direction = 4
-  let entryDir = 4;
-  const maxSteps = pts.length * 4 + 8;
+  let entryDir = 6; // topmost pixel: we conceptually entered from above (North)
+  const maxSteps = pts.length * 8 + 16;
   let steps = 0;
 
   do {
     contour.push([cx, cy]);
-    // Search clockwise starting from (entryDir+5)%8 (left-turn from entry)
     let moved = false;
     for (let i = 0; i < 8; i++) {
       const d  = (entryDir + 5 + i) % 8;
       const nx = cx + DX[d], ny = cy + DY[d];
       if (has(nx, ny)) {
         cx = nx; cy = ny;
-        entryDir = (d + 4) % 8; // opposite = where we came from
+        entryDir = (d + 4) % 8;
         moved = true; break;
       }
     }
