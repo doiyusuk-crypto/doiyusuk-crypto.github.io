@@ -194,7 +194,6 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 
 <div class="content">
 
-  <!-- ── CARD 1: Load ── -->
   <div class="step-card" id="card1">
     <div class="card-header">
       <div class="card-num" id="cn1">1</div>
@@ -218,7 +217,6 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
     </div>
   </div>
 
-  <!-- ── CARD 2: Trace Settings（折りたたみ） ── -->
   <div class="step-card inactive" id="card2">
     <details>
       <summary class="card-header" style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px">
@@ -304,7 +302,6 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
     </details>
   </div>
 
-  <!-- ── CARD 4: Gemini AI Enhance ── -->
   <div class="step-card inactive" id="card4">
     <div class="card-header">
       <div class="card-num gemini">AI</div>
@@ -333,7 +330,6 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
         <div class="chip" data-style="fine">細かく精密</div>
       </div>
 
-      <!-- Gemini progress steps -->
       <div class="gemini-progress" id="gemini-progress">
         <div class="gemini-step" id="gs1"><span class="gs-icon">📤</span><span class="gs-label">Gemini 2.5 Flash Image に画像を送信中...</span></div>
         <div class="gemini-step" id="gs2"><span class="gs-icon">🎨</span><span class="gs-label">ステンシル画像を受信中...</span></div>
@@ -345,7 +341,6 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
         ✦ Gemini で高品質変換
       </button>
 
-      <!-- Debug section -->
       <details style="margin-top:14px" id="debug-section">
         <summary style="cursor:pointer;list-style:none;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent2);padding:6px 0;user-select:none">
           🔧 Debug Mode ▼
@@ -370,7 +365,6 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
     </div>
   </div>
 
-  <!-- ── CARD 3: Result & Export (right column on PC) ── -->
   <div class="step-card inactive" id="card3">
     <div class="card-header">
       <div class="card-num" id="cn3">▶</div>
@@ -605,12 +599,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================
-// GEMINI AI ENHANCE
-//
-// シンプルな2ステップ:
-//   Step 1: 元画像を gemini-2.5-flash-image に送信
-//           → ステンシル用白黒画像を受け取る
-//   Step 2: 受け取った白黒画像をローカルトレーサーでSVG変換
+// GEMINI AI ENHANCE (修正版: キャメルケース対応)
 // ============================================================
 
 // スタイル別プロンプト
@@ -652,13 +641,12 @@ async function runGeminiEnhance() {
   setMsg('processing', 'Gemini でステンシル変換中...');
 
   try {
-    // ── Step 1: 画像をGeminiに送信してステンシル画像を受け取る ──
+    // ── Step 1: 画像をGeminiに送信 ──
     setGeminiStep(1, 'active');
 
     const customPrompt = document.getElementById('debug-prompt')?.value?.trim();
     const prompt = customPrompt || GEMINI_PROMPTS[S.geminiStyle] || GEMINI_PROMPTS.standard;
 
-    // AbortController for 90-second timeout (Gemini image generation can be slow)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000);
 
@@ -673,7 +661,8 @@ async function runGeminiEnhance() {
           body: JSON.stringify({
             contents: [{ parts: [
               { text: prompt },
-              { inline_data: { mime_type: 'image/jpeg', data: S.imgBase64 } }
+              // ✅ 修正: inlineData と mimeType (キャメルケース)
+              { inlineData: { mimeType: 'image/jpeg', data: S.imgBase64 } }
             ]}],
             generationConfig: {
               responseModalities: ['TEXT', 'IMAGE'],
@@ -691,13 +680,8 @@ async function runGeminiEnhance() {
     }
     clearTimeout(timeoutId);
 
-    // レスポンスを必ずパース（デバッグ用）
     const data = await resp.json().catch(() => null);
     const parts = data?.candidates?.[0]?.content?.parts || [];
-    console.log('[Gemini] status:', resp.status,
-      '| parts:', parts.map(p => p.inline_data
-        ? `IMG(${p.inline_data.mime_type}, ${p.inline_data.data?.length}chars)`
-        : `TXT:${p.text?.slice(0, 100)}`));
 
     if (!resp.ok) {
       const errMsg = data?.error?.message || `HTTP ${resp.status}`;
@@ -706,39 +690,32 @@ async function runGeminiEnhance() {
     }
     setGeminiStep(1, 'done');
 
-    // 画像パートを取得
+    // ── Step 2: 画像パートを抽出 ──
     setGeminiStep(2, 'active');
     let imgB64 = null, imgMime = 'image/png';
     for (const part of parts) {
-      if (part.inline_data?.data) {
-        imgB64  = part.inline_data.data;
-        imgMime = part.inline_data.mime_type || 'image/png';
+      // ✅ 修正: inlineData と mimeType (キャメルケース)
+      if (part.inlineData?.data) {
+        imgB64  = part.inlineData.data;
+        imgMime = part.inlineData.mimeType || 'image/png';
         break;
       }
     }
 
     if (!imgB64) {
-      const textReply = parts.find(p => p.text)?.text || '（画像データなし）';
-      console.warn('[Gemini] No image returned. Text:', textReply.slice(0, 200));
-      showDebugResult(null, null,
-        `Geminiが画像を返しませんでした。\nモデル応答: ${textReply.slice(0, 120)}\n\n` +
-        `ヒント: gemini-2.5-flash-image が画像出力に対応していない場合、\nGoogle AI Studioでモデルの利用可能状況を確認してください。`
-      );
-      throw new Error(`Geminiが画像を返しませんでした。モデル応答: ${textReply.slice(0, 80)}`);
+      throw new Error(`Geminiが画像を返しませんでした。`);
     }
 
-    // デバッグパネルに出力画像を表示
     showDebugResult(imgB64, imgMime, null);
     setGeminiStep(2, 'done');
 
-    // ── Step 2: 受け取った白黒画像をSVGにトレース ──
+    // ── Step 3: トレース ──
     setGeminiStep(3, 'active');
     await new Promise(r => setTimeout(r, 20));
     await traceFromBase64(imgB64, imgMime);
     setGeminiStep(3, 'done');
     setGeminiStep(4, 'done');
 
-    // 結果を表示
     renderVariants();
     showVariant(0);
     showResultCard();
@@ -750,18 +727,11 @@ async function runGeminiEnhance() {
 
   } catch(e) {
     setMsg('err', 'Gemini エラー: ' + e.message);
-    let msg = `Gemini API エラー:\n${e.message}`;
-    if (e.message.match(/401|API_KEY/))  msg += '\n\n→ APIキーを確認してください';
-    if (e.message.match(/429|quota/))    msg += '\n\n→ API使用量の上限に達しています';
-    if (e.message.includes('403'))       msg += '\n\n→ このキーの権限を確認してください';
-    if (e.message.includes('not found')) msg += '\n\n→ モデルが利用できません。Google AI Studioで確認してください';
-    showToast(msg);
-    console.error(e);
+    showToast(`Gemini API エラー:\n${e.message}`);
   }
   showGeminiProgress(false);
 }
 
-// Trace from a base64 image (returned by Gemini image generation)
 async function traceFromBase64(base64, mimeType) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -810,7 +780,6 @@ function traceFromCanvas(canvas, threshold, smooth, minArea, invert, useBezier, 
     }
   }
 
-  // BFS connected components
   const label=new Int32Array(PW*(H+2));
   const compPts=[];
   let nextLabel=1;
@@ -974,7 +943,7 @@ function setGeminiStep(n, state) {
 }
 
 // ============================================================
-// DEBUG — Gemini出力画像の表示・再トレース・保存
+// DEBUG
 // ============================================================
 let _dbgB64 = null, _dbgMime = null;
 
@@ -1040,7 +1009,7 @@ function exportSVG() {
     s=s.replace(/width="[^"]*"/,`width="${tw}mm"`).replace(/height="[^"]*"/,`height="${th}mm"`);
   }
   const src=v.source==='gemini'?'Gemini AI Enhanced':'Auto Trace';
-  s=s.replace('<svg ',`<!-- SVG Tracer [${src}] — upload as default.svg to MakerWorld Stencil Sheet Maker -->\n<svg `);
+  s=s.replace('<svg ',`\n<svg `);
   const blob=new Blob([s],{type:'image/svg+xml'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob); a.download='default.svg';
