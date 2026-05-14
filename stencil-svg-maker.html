@@ -178,6 +178,23 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 
 /* TOAST */
 .toast{display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#2a0800;border:1px solid var(--accent2);color:var(--accent2);font-size:11px;padding:12px 20px;border-radius:8px;z-index:300;max-width:90vw;text-align:center;line-height:1.6;white-space:pre-line;box-shadow:0 4px 20px rgba(0,0,0,.6)}
+
+/* GEMINI HISTORY */
+#card5{order:5}
+.history-empty{font-size:10px;color:var(--muted);padding:16px 0;text-align:center}
+.hist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:4px}
+.hist-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:border-color .15s,transform .1s;position:relative}
+.hist-item:active{transform:scale(.97)}
+.hist-item:hover{border-color:var(--accent3)}
+.hist-item img{width:100%;display:block;aspect-ratio:1;object-fit:contain;background:#fff}
+.hist-item-info{padding:6px 8px;display:flex;justify-content:space-between;align-items:center}
+.hist-item-label{font-size:9px;color:var(--muted);letter-spacing:.06em}
+.hist-item-del{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0}
+.hist-item-del:hover{color:var(--accent2)}
+.hist-item.active-hist{border-color:var(--accent3);box-shadow:0 0 0 2px rgba(0,170,255,.25)}
+@media(min-width:800px){
+ #card5{grid-column:1;grid-row:4;order:unset}
+}
 </style>
 </head>
 <body>
@@ -261,14 +278,6 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
      </div>
 
      <div class="divider"></div>
-     <span class="section-label">バリアント数</span>
-     <div class="chips" id="variant-chips" style="margin-bottom:14px">
-       <div class="chip active" data-n="3">3案</div>
-       <div class="chip" data-n="5">5案</div>
-       <div class="chip" data-n="7">7案</div>
-     </div>
-
-     <div class="divider"></div>
      <span class="section-label">オプション</span>
 
      <div class="toggle-row">
@@ -276,7 +285,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
          <div class="toggle-label-text">島を除去（最大輪郭のみ残す）</div>
          <div class="toggle-desc">孤立した小さな輪郭を削除しステンシルに最適化</div>
        </div>
-       <label class="toggle"><input type="checkbox" id="ck-largest" checked><span class="toggle-track"></span></label>
+       <label class="toggle"><input type="checkbox" id="ck-largest"><span class="toggle-track"></span></label>
      </div>
      <div class="toggle-row">
        <div class="toggle-info">
@@ -397,6 +406,20 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
    </div>
  </div>
 
+ <div class="step-card" id="card5" style="display:none">
+   <div class="card-header">
+     <div class="card-num gemini">🕘</div>
+     <div class="card-title">Gemini 変換履歴</div>
+     <span class="card-subtitle" style="margin-left:auto">
+       <button onclick="clearHistory()" style="background:none;border:none;color:var(--muted);font-size:9px;cursor:pointer;font-family:inherit;letter-spacing:.06em;padding:0">全削除</button>
+     </span>
+   </div>
+   <div class="card-body">
+     <div class="history-empty" id="hist-empty">まだ履歴がありません</div>
+     <div class="hist-grid" id="hist-grid"></div>
+   </div>
+ </div>
+
 </div>
 
 <div class="status-bar">
@@ -411,7 +434,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 const S = {
  imgEl: null, imgW: 0, imgH: 0, imgBase64: '',
  variants: [], selectedVariant: 0,
- variantCount: 3, exportSize: 'original',
+ variantCount: 5, exportSize: 'original',
  geminiStyle: 'standard',
  svgSource: 'auto',
 };
@@ -441,7 +464,6 @@ function initChips(id, cb) {
    });
  });
 }
-initChips('variant-chips', c => { S.variantCount = parseInt(c.dataset.n); });
 initChips('size-chips',    c => { S.exportSize = c.dataset.size; });
 initChips('style-chips',   c => { S.geminiStyle = c.dataset.style; });
 
@@ -836,13 +858,16 @@ async function runGeminiEnhance() {
    setGeminiStep(4, 'done');
 
    renderVariants();
-   showVariant(0);
+   showVariant(S.selectedVariant);
    showResultCard();
    document.getElementById('btn-export').disabled = false;
    S.svgSource = 'gemini';
    showBadge('gemini');
-   setMsg('ok', `✓ Gemini変換完了 — ${S.variants[0]?.pathCount || 0}パス`);
-   setBadge(`Gemini · ${S.variants[0]?.pathCount || 0}パス`);
+   setMsg('ok', `✓ Gemini変換完了 — ${S.variants[S.selectedVariant]?.pathCount || 0}パス`);
+   setBadge(`Gemini · ${S.variants[S.selectedVariant]?.pathCount || 0}パス`);
+
+   // 履歴に追加
+   addGeminiHistory(imgB64, imgMime, S.geminiStyle);
 
  } catch(e) {
    setMsg('err', 'Gemini エラー: ' + e.message);
@@ -862,10 +887,15 @@ async function traceFromBase64(base64, mimeType) {
      cv.width = w; cv.height = h;
      cv.getContext('2d').drawImage(img, 0, 0, w, h);
      try {
-       // Gemini出力画像は既に白黒なのでSmoothing多め・minArea小さめで精密にトレース
-       const result = traceFromCanvas(cv, 140, 8, 10, false, true, false);
-       S.variants = [{ ...result, threshold: 140, source: 'gemini' }];
-       S.selectedVariant = 0;
+       // Gemini出力画像に対しても5バリアント生成（threshold違い）
+       const baseThresh = 140;
+       const thresholds = [100, 120, 140, 160, 180];
+       const variants = thresholds.map(t => ({
+         ...traceFromCanvas(cv, t, 8, 10, false, true, false),
+         threshold: t, source: 'gemini'
+       }));
+       S.variants = variants;
+       S.selectedVariant = 2; // 真ん中(140)をデフォルト選択
        resolve();
      } catch(e) { reject(e); }
    };
@@ -960,7 +990,7 @@ async function retraceDebugImg() {
  await new Promise(r => setTimeout(r, 30));
  try {
    await traceFromBase64(_dbgB64, _dbgMime || 'image/png');
-   renderVariants(); showVariant(0); showResultCard();
+   renderVariants(); showVariant(S.selectedVariant); showResultCard();
    document.getElementById('btn-export').disabled = false;
    showBadge('gemini'); setMsg('ok', '✓ Gemini画像を再トレースしました');
  } catch(e) { showToast('再トレースエラー: ' + e.message); }
@@ -994,8 +1024,88 @@ function exportSVG() {
 }
 
 // ============================================================
-// UI HELPERS
+// GEMINI HISTORY (session-only, resets on reload)
 // ============================================================
+const geminiHistory = []; // [{id, b64, mime, style, thumb, time}]
+let histIdCounter = 0;
+
+function addGeminiHistory(b64, mime, style) {
+ const id = ++histIdCounter;
+ const time = new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+ geminiHistory.unshift({ id, b64, mime, style, time });
+ renderHistory();
+ document.getElementById('card5').style.display = '';
+}
+
+function renderHistory() {
+ const grid  = document.getElementById('hist-grid');
+ const empty = document.getElementById('hist-empty');
+ grid.innerHTML = '';
+ if (geminiHistory.length === 0) { empty.style.display = 'block'; return; }
+ empty.style.display = 'none';
+ geminiHistory.forEach(h => {
+   const item = document.createElement('div');
+   item.className = 'hist-item';
+   item.dataset.id = h.id;
+
+   const img = document.createElement('img');
+   img.src = `data:${h.mime};base64,${h.b64}`;
+   img.loading = 'lazy';
+
+   const info = document.createElement('div'); info.className = 'hist-item-info';
+   const lbl  = document.createElement('div'); lbl.className = 'hist-item-label';
+   lbl.textContent = `${h.style} · ${h.time}`;
+   const del  = document.createElement('button'); del.className = 'hist-item-del';
+   del.textContent = '✕'; del.title = '削除';
+   del.addEventListener('click', e => { e.stopPropagation(); deleteHistory(h.id); });
+
+   info.appendChild(lbl); info.appendChild(del);
+   item.appendChild(img); item.appendChild(info);
+   item.addEventListener('click', () => loadFromHistory(h));
+   grid.appendChild(item);
+ });
+}
+
+async function loadFromHistory(h) {
+ // アクティブ強調
+ document.querySelectorAll('.hist-item').forEach(el => {
+   el.classList.toggle('active-hist', parseInt(el.dataset.id) === h.id);
+ });
+
+ showSpinner(true, '履歴からSVGを生成中...');
+ setMsg('processing', '履歴画像をトレース中...');
+ await new Promise(r => setTimeout(r, 30));
+ try {
+   await traceFromBase64(h.b64, h.mime);
+   renderVariants();
+   showVariant(S.selectedVariant);
+   showResultCard();
+   document.getElementById('btn-export').disabled = false;
+   showBadge('gemini');
+   setMsg('ok', `✓ 履歴から復元 — ${S.variants[S.selectedVariant]?.pathCount || 0}パス`);
+   setBadge(`履歴 · ${S.variants[S.selectedVariant]?.pathCount || 0}パス`);
+
+   // デバッグエリアにも反映
+   showDebugResult(h.b64, h.mime, null);
+ } catch(e) {
+   showToast('履歴の読み込みに失敗しました:\n' + e.message);
+ }
+ showSpinner(false);
+}
+
+function deleteHistory(id) {
+ const idx = geminiHistory.findIndex(h => h.id === id);
+ if (idx !== -1) geminiHistory.splice(idx, 1);
+ renderHistory();
+ if (geminiHistory.length === 0) document.getElementById('card5').style.display = 'none';
+}
+
+function clearHistory() {
+ geminiHistory.length = 0;
+ renderHistory();
+ document.getElementById('card5').style.display = 'none';
+}
+
 function showSpinner(show, text='処理中...') {
  document.getElementById('spinner').style.display = show ? 'flex' : 'none';
  document.getElementById('spinner-text').textContent = text;
