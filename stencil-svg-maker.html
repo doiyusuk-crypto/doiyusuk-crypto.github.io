@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>SVG Tracer — High Precision</title>
+<title>SVG Tracer — Stencil Sheet Maker</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;900&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -24,24 +24,6 @@ header{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom
 
 /* LAYOUT */
 .content{padding:0 16px 100px;max-width:560px;margin:0 auto;display:flex;flex-direction:column}
-#card1{order:1}
-#card3{order:2}
-#card2{order:3}
-#card4{order:4}
-
-@media(min-width:800px){
-  body{padding-bottom:0}
-  .content{max-width:1200px;padding:20px 28px 60px;display:grid;
-    grid-template-columns:360px 1fr;grid-template-rows:auto auto auto;column-gap:20px;align-items:start}
-  #card1{grid-column:1;grid-row:1;margin-top:0;order:unset}
-  #card2{grid-column:1;grid-row:2;order:unset}
-  #card4{grid-column:1;grid-row:3;order:unset}
-  #card3{grid-column:2;grid-row:1/4;margin-top:0;position:sticky;top:76px;order:unset}
-  .card-body{padding:20px}
-  .step-card{margin-top:14px}
-  .svg-preview-wrap{min-height:340px}
-  #svg-display svg{max-height:400px!important}
-}
 
 /* CARDS */
 .step-card{margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:opacity .3s,filter .3s}
@@ -50,87 +32,49 @@ header{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom
 .card-num{background:var(--accent);color:#000;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .card-num.gemini{background:var(--accent3)}
 .card-title{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:13px;letter-spacing:.2em;text-transform:uppercase}
-.card-subtitle{font-size:9px;color:var(--muted);letter-spacing:.08em;margin-left:auto}
 .card-body{padding:16px}
 
 /* DROP ZONE */
 .dropzone{border:2px dashed var(--border);border-radius:var(--r);padding:28px 16px;text-align:center;cursor:pointer;position:relative;background:rgba(255,255,255,.02);transition:all .2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:120px}
-.dropzone.over{border-color:var(--accent);background:rgba(232,255,0,.04)}
-.dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.dz-icon{font-size:36px;line-height:1}
 .dz-title{font-size:13px;color:var(--text);font-weight:600}
-.dz-sub{font-size:10px;color:var(--muted)}
-.file-ok{display:none;align-items:center;gap:10px;background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.2);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--green);margin-top:10px}
-.file-ok .chg{margin-left:auto;font-size:10px;color:var(--muted);text-decoration:underline;cursor:pointer;background:none;border:none;font-family:inherit;padding:0}
 #img-preview-wrap{display:none;margin-top:12px;border-radius:8px;overflow:hidden;background:#222}
 #canvas-original{max-width:100%;display:block}
 
 /* CONTROLS */
 .ctrl{margin-bottom:16px}
-.ctrl-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px}
-.ctrl-info{flex:1}
-.ctrl-label{font-size:12px;color:var(--text);font-weight:600;line-height:1.3}
-.ctrl-desc{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.5}
-.ctrl-val{color:var(--accent);background:var(--bg);padding:3px 10px;border-radius:4px;font-size:12px;min-width:44px;text-align:center;font-weight:600;flex-shrink:0;align-self:flex-start}
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:2px;background:var(--border);outline:none;border-radius:1px;padding:14px 0;background-clip:content-box}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);transition:transform .1s}
-input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:var(--accent);border:none;cursor:pointer}
+.ctrl-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.ctrl-label{font-size:12px;color:var(--text);font-weight:600}
+.ctrl-val{color:var(--accent);background:var(--bg);padding:3px 10px;border-radius:4px;font-size:12px;min-width:44px;text-align:center;font-weight:600}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:2px;background:var(--border);outline:none;padding:14px 0;background-clip:content-box}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:var(--accent);cursor:pointer}
 
-/* CHIPS / TOGGLE */
+/* CHIPS */
 .chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{border:1.5px solid var(--border);background:var(--bg);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:7px 13px;border-radius:20px;cursor:pointer;transition:all .15s;user-select:none;min-height:36px;display:flex;align-items:center}
+.chip{border:1.5px solid var(--border);background:var(--bg);color:var(--muted);font-size:11px;padding:7px 13px;border-radius:20px;cursor:pointer;transition:all .15s}
 .chip.active{background:rgba(232,255,0,.12);border-color:var(--accent);color:var(--accent);font-weight:600}
-.toggle-row{display:flex;align-items:center;justify-content:space-between;min-height:46px;border-bottom:1px solid var(--border);padding:4px 0}
-.toggle-row:last-child{border-bottom:none}
-.toggle-info{flex:1;padding-right:12px}
-.toggle-label-text{font-size:12px;color:var(--text);font-weight:600}
-.toggle-desc{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4}
-.toggle{position:relative;width:44px;height:26px;flex-shrink:0}
-.toggle input{opacity:0;width:0;height:0}
-.toggle-track{position:absolute;inset:0;background:var(--border);border-radius:13px;transition:background .2s;cursor:pointer}
-.toggle input:checked+.toggle-track{background:var(--accent)}
-.toggle-track::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.3)}
-.toggle input:checked+.toggle-track::after{transform:translateX(18px)}
+
+/* PREVIEW */
+.svg-preview-wrap{background:#fff;border-radius:var(--r);display:flex;align-items:center;justify-content:center;min-height:200px;margin-bottom:12px;overflow:hidden;position:relative}
+#svg-display svg{max-width:100%;max-height:300px;display:block}
 
 /* BUTTONS */
-.btn{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;padding:0 20px;height:var(--tap);border:none;cursor:pointer;border-radius:var(--r);transition:all .15s;letter-spacing:.06em;text-transform:uppercase;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px}
+.btn{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;height:var(--tap);border:none;cursor:pointer;border-radius:var(--r);width:100%;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px}
 .btn-primary{background:var(--accent);color:#000}
-.btn-retrace{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
 .btn-gemini{background:linear-gradient(135deg,#1a3a5c,#0d5c8a);color:#fff;border:1px solid var(--accent3)}
 .btn-export{background:var(--accent2);color:#fff}
 .btn:disabled{opacity:.25;cursor:not-allowed}
 
-/* API KEY */
-.api-input-wrap{position:relative;margin-bottom:10px}
-.api-input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:10px 40px 10px 12px;border-radius:8px;outline:none}
-.api-toggle-vis{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer}
-.api-status{font-size:10px;margin-top:6px;padding:6px 10px;border-radius:6px;display:none}
-.api-status.ok{display:block;background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.2);color:var(--green)}
-
-/* PREVIEW */
-.svg-preview-wrap{background:#fff;border-radius:var(--r);display:flex;align-items:center;justify-content:center;min-height:200px;margin-bottom:12px;overflow:hidden;position:relative}
-#svg-display svg{max-width:100%;max-height:260px;display:block}
-.svg-source-badge{position:absolute;top:8px;right:8px;font-size:9px;padding:3px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;font-weight:600}
-.badge-auto{background:rgba(232,255,0,.15);border:1px solid var(--accent);color:var(--accent)}
-.badge-gemini{background:rgba(0,170,255,.15);border:1px solid var(--accent3);color:var(--accent3)}
-
-/* VARIANTS */
-.variants-scroll{display:none;overflow-x:auto;gap:10px;padding-bottom:6px;margin-bottom:12px}
-.variant-item{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px}
-.variant-thumb{width:80px;height:80px;border:2px solid var(--border);border-radius:8px;background:#fff;overflow:hidden;cursor:pointer}
-.variant-thumb.selected{border-color:var(--accent)}
-.variant-thumb svg{width:100%;height:100%}
-.variant-label{font-size:9px;color:var(--muted)}
-
-/* STATUS BAR */
+/* STATUS */
 .status-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:10px 16px;padding-bottom:max(10px,env(safe-area-inset-bottom));font-size:10px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;z-index:50}
-.ok{color:var(--green)}.processing{color:var(--accent)}.err{color:var(--accent2)}
+.ok{color:var(--green)}
 
-/* SPINNER / TOAST */
+/* API */
+.api-input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:10px;border-radius:8px;outline:none;margin-bottom:10px}
+
+/* SPINNER */
 .spinner-overlay{display:none;position:fixed;inset:0;background:rgba(10,10,10,.85);z-index:200;flex-direction:column;align-items:center;justify-content:center;gap:16px}
-.spinner-ring{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+.spinner-ring{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.toast{display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#2a0800;border:1px solid var(--accent2);color:var(--accent2);font-size:11px;padding:12px 20px;border-radius:8px;z-index:300}
 </style>
 </head>
 <body>
@@ -139,82 +83,64 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
   <div class="spinner-ring"></div>
   <div class="spinner-text" id="spinner-text">処理中...</div>
 </div>
-<div class="toast" id="toast"></div>
 
 <header>
-  <div class="logo"><em>SVG</em> Tracer<small>High Precision Mode</small></div>
+  <div class="logo"><em>SVG</em> Tracer<small>Stencil Sheet Maker</small></div>
 </header>
 
 <div class="content">
-
   <div class="step-card" id="card1">
     <div class="card-header"><div class="card-num">1</div><div class="card-title">Load Image</div></div>
     <div class="card-body">
-      <div class="dropzone" id="dropzone">
-        <input type="file" id="file-input" accept="image/*">
-        <span class="dz-icon">🖼️</span>
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
+        <input type="file" id="file-input" accept="image/*" style="display:none">
+        <span style="font-size:30px">🖼️</span>
         <div class="dz-title">タップして画像を選択</div>
-      </div>
-      <div class="file-ok" id="file-ok">
-        <span>✓</span><span id="file-name-disp" style="flex:1;overflow:hidden;text-overflow:ellipsis">—</span>
-        <button class="chg" onclick="changeFile()">変更</button>
       </div>
       <div id="img-preview-wrap"><canvas id="canvas-original"></canvas></div>
     </div>
   </div>
 
   <div class="step-card inactive" id="card2">
-    <details>
-      <summary class="card-header" style="list-style:none;cursor:pointer"><div class="card-num">2</div><div class="card-title">Trace Settings ▼</div></summary>
-      <div class="card-body">
-        <div class="ctrl">
-          <div class="ctrl-head"><div class="ctrl-label">Threshold</div><span class="ctrl-val" id="v-thresh">128</span></div>
-          <input type="range" id="r-thresh" min="1" max="254" value="128">
-        </div>
-        <div class="ctrl">
-          <div class="ctrl-head"><div class="ctrl-label">Smoothing</div><span class="ctrl-val" id="v-smooth">1.0</span></div>
-          <input type="range" id="r-smooth" min="0" max="50" value="10">
-        </div>
-        <div class="ctrl">
-          <div class="ctrl-head"><div class="ctrl-label">Min Area (px²)</div><span class="ctrl-val" id="v-minarea">20</span></div>
-          <input type="range" id="r-minarea" min="0" max="500" value="20" step="5">
-        </div>
-        <div class="toggle-row">
-          <div class="toggle-label-text">島を除去（最大輪郭のみ）</div>
-          <label class="toggle"><input type="checkbox" id="ck-largest"><span class="toggle-track"></span></label>
-        </div>
-        <div class="toggle-row">
-          <div class="toggle-label-text">反転</div>
-          <label class="toggle"><input type="checkbox" id="ck-invert"><span class="toggle-track"></span></label>
-        </div>
-        <button class="btn btn-retrace" id="btn-retrace" onclick="runTrace(true)">↺ 再トレース</button>
-      </div>
-    </details>
-  </div>
-
-  <div class="step-card inactive" id="card4">
-    <div class="card-header"><div class="card-num gemini">AI</div><div class="card-title">Gemini AI Enhance</div></div>
+    <div class="card-header"><div class="card-num">2</div><div class="card-title">Threshold & Trace</div></div>
     <div class="card-body">
-      <div class="api-input-wrap">
-        <input type="password" class="api-input" id="api-key-input" placeholder="Gemini API Key" oninput="onApiKeyInput()">
+      <div class="ctrl">
+        <div class="ctrl-head"><div class="ctrl-label">Threshold</div><span class="ctrl-val" id="v-thresh">128</span></div>
+        <input type="range" id="r-thresh" min="1" max="254" value="128" oninput="runTrace()">
       </div>
-      <div class="api-status" id="api-status"></div>
-      <button class="btn btn-gemini" id="btn-gemini" disabled onclick="runGeminiEnhance()">✦ Gemini で高品質変換</button>
+      <button class="btn btn-primary" onclick="runTrace()">↺ 手動で再トレース</button>
     </div>
   </div>
 
   <div class="step-card inactive" id="card3">
-    <div class="card-header"><div class="card-num">▶</div><div class="card-title">Result</div></div>
+    <div class="card-header"><div class="card-num gemini">AI</div><div class="card-title">Gemini Enhance</div></div>
     <div class="card-body">
-      <div class="variants-scroll" id="variants-scroll"></div>
-      <div class="svg-preview-wrap">
-        <div id="svg-display"></div>
-        <div class="svg-source-badge" id="svg-source-badge"></div>
+      <input type="password" class="api-input" id="api-key-input" placeholder="Gemini API Key" oninput="updateGeminiBtn()">
+      <div class="ctrl-label" style="margin-bottom:8px">Style Mode:</div>
+      <div class="chips" style="margin-bottom:16px">
+        <div class="chip active" onclick="setStyle(this,'standard')">スタンダード</div>
+        <div class="chip" onclick="setStyle(this,'bold')">太め・シンプル</div>
+        <div class="chip" onclick="setStyle(this,'fine')">細かく精密</div>
       </div>
-      <button class="btn btn-export" id="btn-export" disabled onclick="exportSVG()">↓ Download default.svg</button>
+      <button class="btn btn-gemini" id="btn-gemini" disabled onclick="runGeminiEnhance()">✦ Gemini で高品質変換</button>
     </div>
   </div>
 
+  <div class="step-card inactive" id="card4">
+    <div class="card-header"><div class="card-num">▶</div><div class="card-title">Result & Export</div></div>
+    <div class="card-body">
+      <div class="svg-preview-wrap" id="svg-display"></div>
+      
+      <div class="ctrl-label" style="margin-bottom:8px">Export Size (MakerWorld):</div>
+      <div class="chips" style="margin-bottom:16px">
+        <div class="chip active" onclick="setSize(this,'100')">100mm</div>
+        <div class="chip" onclick="setSize(this,'50')">50mm</div>
+        <div class="chip" onclick="setSize(this,'original')">元画像サイズ</div>
+      </div>
+      
+      <button class="btn btn-export" id="btn-export" onclick="exportSVG()">↓ Download default.svg</button>
+    </div>
+  </div>
 </div>
 
 <div class="status-bar">
@@ -224,299 +150,205 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 
 <script>
 // ============================================================
-// STATE & CONFIG
+// STATE
 // ============================================================
 const S = {
   imgEl: null, imgW: 0, imgH: 0, imgBase64: '',
   variants: [], selectedVariant: 0,
-  variantCount: 3, geminiStyle: 'standard',
+  geminiStyle: 'standard',
+  exportSize: '100'
 };
-const TRACE_DIM = 600; // 精度向上のためトレース解像度を少しアップ
+const TRACE_DIM = 600;
+
+const GEMINI_PROMPTS = {
+  standard: "Convert to a clean black and white stencil. Pure white background, pure black shapes. Balanced details.",
+  bold: "Convert to a simple, bold black stencil. Remove fine details, thicken lines for small printing.",
+  fine: "Convert to a highly detailed black and white line art. Keep intricate details and thin lines."
+};
 
 // ============================================================
-// CORE TRACER (HIGH PRECISION: Boundary Following)
+// HIGH PRECISION TRACER (島の除去なし・正確に辿る)
 // ============================================================
-
-/**
- * 境界追跡アルゴリズム（Moore-Neighbor Tracing改変版）
- * イラストの輪郭を1ピクセルずつ正確に辿り、パスを生成します。
- */
-function traceFromCanvas(canvas, threshold, smooth, minArea, invert, largestOnly) {
+function traceFromCanvas(canvas, threshold) {
   const W = canvas.width, H = canvas.height;
   const ctx = canvas.getContext('2d');
-  const imageData = ctx.getImageData(0, 0, W, H);
-  const data = imageData.data;
+  const data = ctx.getImageData(0, 0, W, H).data;
 
-  // 1. 二値化マップの作成 (1=黒, 0=白)
   const binary = new Uint8Array(W * H);
   for (let i = 0; i < W * H; i++) {
     const gray = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
-    let val = gray < threshold ? 1 : 0;
-    if (invert) val = 1 - val;
-    binary[i] = val;
+    binary[i] = gray < threshold ? 1 : 0;
   }
 
-  // 2. 輪郭抽出 (Scan & Trace)
   const visited = new Uint8Array(W * H);
   const paths = [];
 
+  // スキャンして境界を見つける
   for (let y = 1; y < H - 1; y++) {
     for (let x = 1; x < W - 1; x++) {
-      // 未訪問の黒ピクセルを見つけ、かつその上が白（境界）の場合に追跡開始
       const idx = y * W + x;
       if (binary[idx] === 1 && !visited[idx] && binary[idx - W] === 0) {
         const contour = followContour(binary, visited, x, y, W, H);
-        if (contour && contour.length > 5) {
-          // 面積チェック（簡易的にバウンディングボックスまたは長さ）
-          if (contour.length >= minArea / 2) {
-            paths.push(contour);
-          }
+        if (contour && contour.length > 3) {
+          paths.push(contour);
         }
       }
     }
   }
 
-  if (paths.length === 0) return { svgStr: buildSVG([], W, H), pathCount: 0, w: W, h: H };
-
-  // 3. フィルタリング
-  let finalPaths = paths;
-  if (largestOnly) {
-    finalPaths = [paths.reduce((a, b) => a.length > b.length ? a : b)];
-  }
-
-  // 4. 平滑化 & SVGパス化
-  const iterations = Math.ceil(smooth * 2);
-  const svgPaths = finalPaths.map(pts => {
-    let p = pts;
-    if (iterations > 0) p = chaikinSmooth(p, iterations);
-    return toLinearPath(p);
+  const svgPaths = paths.map(pts => {
+    let d = `M ${pts[0][0]} ${pts[0][1]}`;
+    for (let i = 1; i < pts.length; i++) d += ` L ${pts[i][0]} ${pts[i][1]}`;
+    return d + ' Z';
   });
 
-  return { svgStr: buildSVG(svgPaths, W, H), pathCount: finalPaths.length, w: W, h: H };
+  const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">\n` +
+                 svgPaths.map(d => `  <path d="${d}" fill="black" fill-rule="evenodd"/>`).join('\n') + 
+                 `</svg>`;
+  
+  return { svgStr, pathCount: paths.length, w: W, h: H };
 }
 
-/**
- * 境界を辿るメインロジック
- */
 function followContour(binary, visited, startX, startY, W, H) {
   const points = [];
   let cx = startX, cy = startY;
-  let dx = 0, dy = -1; // 初期進行方向：上
-
-  // 時計回りに隣接ピクセルを調べるための相対座標
+  let dx = 0, dy = -1;
   const neighbors = [[0,-1],[1,-1],[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1]];
-
-  let first = true;
-  let limit = W * H; // 無限ループ防止
-
+  
+  let limit = W * H;
   while (limit-- > 0) {
     points.push([cx, cy]);
     visited[cy * W + cx] = 1;
-
-    // 現在の方向から左後ろ（45度ずつ）から順に周囲をスキャン
     let found = false;
-    let dirIdx = neighbors.findIndex(n => n[0] === dx && n[1] === dy);
-    // 開始方向を少し左へずらす
-    let startScan = (dirIdx + 5) % 8;
-
+    let startScan = (neighbors.findIndex(n => n[0] === dx && n[1] === dy) + 5) % 8;
     for (let i = 0; i < 8; i++) {
-      let checkIdx = (startScan + i) % 8;
-      let nx = cx + neighbors[checkIdx][0];
-      let ny = cy + neighbors[checkIdx][1];
-
+      let check = neighbors[(startScan + i) % 8];
+      let nx = cx + check[0], ny = cy + check[1];
       if (nx >= 0 && nx < W && ny >= 0 && ny < H && binary[ny * W + nx] === 1) {
-        dx = neighbors[checkIdx][0];
-        dy = neighbors[checkIdx][1];
-        cx = nx;
-        cy = ny;
-        found = true;
-        break;
+        dx = check[0]; dy = check[1]; cx = nx; cy = ny;
+        found = true; break;
       }
     }
-
     if (!found || (cx === startX && cy === startY)) break;
   }
   return points;
 }
 
-function chaikinSmooth(pts, iterations) {
-  let p = pts;
-  for (let it = 0; it < iterations; it++) {
-    const out = [], n = p.length;
-    for (let i = 0; i < n; i++) {
-      const a = p[i], b = p[(i + 1) % n];
-      out.push([0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]]);
-      out.push([0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1]]);
-    }
-    p = out;
-  }
-  return p;
-}
-
-function toLinearPath(pts) {
-  if (!pts.length) return '';
-  let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
-  for (let i = 1; i < pts.length; i++) {
-    d += ` L ${pts[i][0].toFixed(1)} ${pts[i][1].toFixed(1)}`;
-  }
-  return d + ' Z';
-}
-
-function buildSVG(pathStrs, w, h) {
-  const body = pathStrs.map(d => `  <path d="${d}" fill="black" fill-rule="evenodd"/>`).join('\n');
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">\n${body}\n</svg>`;
-}
-
 // ============================================================
-// UI & GEMINI LOGIC (Modified to support CamelCase)
+// CORE UI LOGIC
 // ============================================================
-async function runTrace(isManual) {
+function loadFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      S.imgEl = img;
+      const ratio = TRACE_DIM / Math.max(img.width, img.height);
+      S.imgW = Math.round(img.width * ratio);
+      S.imgH = Math.round(img.height * ratio);
+      const cv = document.getElementById('canvas-original');
+      cv.width = S.imgW; cv.height = S.imgH;
+      cv.getContext('2d').drawImage(img, 0, 0, S.imgW, S.imgH);
+      S.imgBase64 = e.target.result.split(',')[1];
+      
+      document.getElementById('img-preview-wrap').style.display = 'block';
+      document.getElementById('card2').classList.remove('inactive');
+      document.getElementById('card3').classList.remove('inactive');
+      runTrace();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function runTrace() {
   if (!S.imgEl) return;
-  showSpinner(true, 'トレース中...');
-  await new Promise(r => setTimeout(r, 50));
-
-  const thresh = parseInt(document.getElementById('r-thresh').value);
-  const smooth = parseFloat(document.getElementById('r-smooth').value) / 10;
-  const minArea = parseInt(document.getElementById('r-minarea').value);
-  const invert = document.getElementById('ck-invert').checked;
-  const largest = document.getElementById('ck-largest').checked;
-
-  // バリアント生成
-  const n = 3;
-  S.variants = [];
-  const steps = [-20, 0, 20];
-  for (let step of steps) {
-    const t = Math.max(5, Math.min(250, thresh + step));
-    S.variants.push({ ...traceFromCanvas(document.getElementById('canvas-original'), t, smooth, minArea, invert, largest), threshold: t, source: 'auto' });
-  }
-
-  S.selectedVariant = 1;
-  renderVariants();
-  showVariant(1);
-  document.getElementById('card3').classList.remove('inactive');
-  document.getElementById('btn-export').disabled = false;
-  showSpinner(false);
-  setMsg('ok', 'トレース完了');
+  const t = parseInt(document.getElementById('r-thresh').value);
+  document.getElementById('v-thresh').textContent = t;
+  const res = traceFromCanvas(document.getElementById('canvas-original'), t);
+  S.variants = [{ ...res, source: 'auto' }];
+  S.selectedVariant = 0;
+  showResult(0);
 }
 
 async function runGeminiEnhance() {
-  const apiKey = document.getElementById('api-key-input').value.trim();
-  if (!apiKey || !S.imgBase64) return;
-  showSpinner(true, 'Gemini AI が画像を分析・清書中...');
-
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) return;
+  showSpinner(true, 'AIで清書中...');
   try {
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`, {
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [
-          { text: "Convert this to a clean black and white stencil. Pure white background, pure black shapes only. No gradients." },
+          { text: GEMINI_PROMPTS[S.geminiStyle] },
           { inlineData: { mimeType: 'image/jpeg', data: S.imgBase64 } }
-        ]}],
-        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+        ]}]
       })
     });
-    const data = await resp.json();
-    const imgPart = data?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-    if (!imgPart) throw new Error("画像が返されませんでした");
-
+    const resJson = await resp.json();
+    const b64 = resJson.candidates[0].content.parts[0].inlineData.data;
     const img = new Image();
     img.onload = () => {
       const cv = document.createElement('canvas');
       cv.width = img.width; cv.height = img.height;
       cv.getContext('2d').drawImage(img, 0, 0);
-      const res = traceFromCanvas(cv, 128, 1.0, 20, false, false);
-      S.variants = [{ ...res, threshold: 128, source: 'gemini' }];
-      S.selectedVariant = 0;
-      renderVariants();
-      showVariant(0);
+      const res = traceFromCanvas(cv, 128);
+      S.variants = [{ ...res, source: 'gemini' }];
+      showResult(0);
       showSpinner(false);
     };
-    img.src = `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
+    img.src = 'data:image/jpeg;base64,' + b64;
   } catch (e) {
+    alert("Error: " + e.message);
     showSpinner(false);
-    showToast("Error: " + e.message);
   }
 }
 
-// ── 以下、ユーティリティ（ファイル読み込み、ボタン制御など） ──
-
-function loadFile(file) {
-  const url = URL.createObjectURL(file);
-  const img = new Image();
-  img.onload = async () => {
-    S.imgEl = img;
-    const ratio = TRACE_DIM / Math.max(img.width, img.height);
-    S.imgW = Math.round(img.width * ratio);
-    S.imgH = Math.round(img.height * ratio);
-    const canvas = document.getElementById('canvas-original');
-    canvas.width = S.imgW; canvas.height = S.imgH;
-    canvas.getContext('2d').drawImage(img, 0, 0, S.imgW, S.imgH);
-    S.imgBase64 = await fileToBase64(file);
-    document.getElementById('img-preview-wrap').style.display = 'block';
-    document.getElementById('dropzone').style.display = 'none';
-    document.getElementById('file-ok').style.display = 'flex';
-    document.getElementById('file-name-disp').textContent = file.name;
-    document.getElementById('card2').classList.remove('inactive');
-    document.getElementById('card4').classList.remove('inactive');
-    runTrace(false);
-  };
-  img.src = url;
-}
-
-async function fileToBase64(file) {
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = e => resolve(e.target.result.split(',')[1]);
-    reader.readAsDataURL(file);
-  });
-}
-
-function renderVariants() {
-  const scroll = document.getElementById('variants-scroll');
-  scroll.innerHTML = ''; scroll.style.display = 'flex';
-  S.variants.forEach((v, i) => {
-    const item = document.createElement('div'); item.className = 'variant-item';
-    const thumb = document.createElement('div');
-    thumb.className = 'variant-thumb' + (i === S.selectedVariant ? ' selected' : '');
-    thumb.innerHTML = v.svgStr;
-    thumb.onclick = () => { S.selectedVariant = i; renderVariants(); showVariant(i); };
-    item.appendChild(thumb);
-    scroll.appendChild(item);
-  });
-}
-
-function showVariant(idx) {
+function showResult(idx) {
   const v = S.variants[idx];
   document.getElementById('svg-display').innerHTML = v.svgStr;
-  const b = document.getElementById('svg-source-badge');
-  b.textContent = v.source === 'gemini' ? '✦ Gemini' : 'Auto';
-  b.className = 'svg-source-badge ' + (v.source === 'gemini' ? 'badge-gemini' : 'badge-auto');
+  document.getElementById('card4').classList.remove('inactive');
   document.getElementById('st-badge').textContent = `${v.pathCount} Paths`;
+  setMsg('ok', v.source === 'gemini' ? 'Gemini変換完了' : 'オートトレース完了');
 }
 
 function exportSVG() {
   const v = S.variants[S.selectedVariant];
-  const blob = new Blob([v.svgStr], { type: 'image/svg+xml' });
+  let s = v.svgStr;
+  if (S.exportSize !== 'original') {
+    const tw = S.exportSize === '100' ? 100 : 50;
+    const th = ((v.h / v.w) * tw).toFixed(2);
+    s = s.replace(/width=\"[^\"]*\"/, `width="${tw}mm"`).replace(/height=\"[^\"]*\"/, `height="${th}mm"`);
+  }
+  const blob = new Blob([s], { type: 'image/svg+xml' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = 'default.svg';
   a.click();
 }
 
-const dz = document.getElementById('dropzone');
-dz.onclick = () => document.getElementById('file-input').click();
-document.getElementById('file-input').onchange = e => { if (e.target.files[0]) loadFile(e.target.files[0]); };
-function changeFile() { document.getElementById('file-input').click(); }
-function onApiKeyInput() { 
-  const key = document.getElementById('api-key-input').value;
-  document.getElementById('btn-gemini').disabled = key.length < 20;
+// ── UI Helpers ──
+function setStyle(el, mode) {
+  S.geminiStyle = mode;
+  el.parentNode.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
 }
-function showSpinner(show, text) { 
+function setSize(el, size) {
+  S.exportSize = size;
+  el.parentNode.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+function updateGeminiBtn() {
+  document.getElementById('btn-gemini').disabled = document.getElementById('api-key-input').value.length < 10;
+}
+function showSpinner(show, text) {
   document.getElementById('spinner').style.display = show ? 'flex' : 'none';
   document.getElementById('spinner-text').textContent = text;
 }
-function setMsg(type, msg) { const el = document.getElementById('st-msg'); el.textContent = msg; el.className = 'msg ' + type; }
-function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
+function setMsg(type, msg) {
+  const el = document.getElementById('st-msg'); el.textContent = msg;
+}
+document.getElementById('file-input').onchange = e => { if (e.target.files[0]) loadFile(e.target.files[0]); };
 </script>
 </body>
 </html>
