@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>SVG Tracer — Stencil Sheet Maker</title>
+<title>SVG Tracer — High Precision</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;900&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -22,14 +22,13 @@ header{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom
 .logo em{color:var(--accent);font-style:normal}
 .logo small{display:block;font-weight:400;font-size:9px;color:var(--muted);letter-spacing:.12em;margin-top:2px}
 
-/* LAYOUT MOBILE — card order: Load→Result→Settings→Gemini */
+/* LAYOUT */
 .content{padding:0 16px 100px;max-width:560px;margin:0 auto;display:flex;flex-direction:column}
 #card1{order:1}
 #card3{order:2}
 #card2{order:3}
 #card4{order:4}
 
-/* LAYOUT PC */
 @media(min-width:800px){
   body{padding-bottom:0}
   .content{max-width:1200px;padding:20px 28px 60px;display:grid;
@@ -42,8 +41,6 @@ header{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom
   .step-card{margin-top:14px}
   .svg-preview-wrap{min-height:340px}
   #svg-display svg{max-height:400px!important}
-  .variant-thumb{width:88px;height:88px}
-  .status-bar{padding-left:28px;padding-right:28px}
 }
 
 /* CARDS */
@@ -52,7 +49,6 @@ header{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom
 .card-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--surface2)}
 .card-num{background:var(--accent);color:#000;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .card-num.gemini{background:var(--accent3)}
-.card-num.done{background:var(--green)}
 .card-title{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:13px;letter-spacing:.2em;text-transform:uppercase}
 .card-subtitle{font-size:9px;color:var(--muted);letter-spacing:.08em;margin-left:auto}
 .card-body{padding:16px}
@@ -71,7 +67,6 @@ header{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom
 
 /* CONTROLS */
 .ctrl{margin-bottom:16px}
-.ctrl:last-child{margin-bottom:0}
 .ctrl-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px}
 .ctrl-info{flex:1}
 .ctrl-label{font-size:12px;color:var(--text);font-weight:600;line-height:1.3}
@@ -79,15 +74,12 @@ header{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom
 .ctrl-val{color:var(--accent);background:var(--bg);padding:3px 10px;border-radius:4px;font-size:12px;min-width:44px;text-align:center;font-weight:600;flex-shrink:0;align-self:flex-start}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:2px;background:var(--border);outline:none;border-radius:1px;padding:14px 0;background-clip:content-box}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);transition:transform .1s}
-input[type=range]:active::-webkit-slider-thumb{transform:scale(1.15)}
 input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:var(--accent);border:none;cursor:pointer}
 
-/* CHIPS */
+/* CHIPS / TOGGLE */
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{border:1.5px solid var(--border);background:var(--bg);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:7px 13px;border-radius:20px;cursor:pointer;transition:all .15s;user-select:none;min-height:36px;display:flex;align-items:center}
 .chip.active{background:rgba(232,255,0,.12);border-color:var(--accent);color:var(--accent);font-weight:600}
-
-/* TOGGLE */
 .toggle-row{display:flex;align-items:center;justify-content:space-between;min-height:46px;border-bottom:1px solid var(--border);padding:4px 0}
 .toggle-row:last-child{border-bottom:none}
 .toggle-info{flex:1;padding-right:12px}
@@ -102,82 +94,43 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 
 /* BUTTONS */
 .btn{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;padding:0 20px;height:var(--tap);border:none;cursor:pointer;border-radius:var(--r);transition:all .15s;letter-spacing:.06em;text-transform:uppercase;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px}
-.btn:last-child{margin-bottom:0}
 .btn-primary{background:var(--accent);color:#000}
-.btn-primary:hover{background:#f5ff4d}
-.btn-primary:active{transform:scale(.98)}
-.btn-primary:disabled{opacity:.25;cursor:not-allowed}
 .btn-retrace{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
-.btn-retrace:hover{border-color:var(--accent);color:var(--accent)}
-.btn-retrace:disabled{opacity:.25;cursor:not-allowed}
 .btn-gemini{background:linear-gradient(135deg,#1a3a5c,#0d5c8a);color:#fff;border:1px solid var(--accent3)}
-.btn-gemini:hover{background:linear-gradient(135deg,#1e4a70,#1070a0)}
-.btn-gemini:active{transform:scale(.98)}
-.btn-gemini:disabled{opacity:.25;cursor:not-allowed}
 .btn-export{background:var(--accent2);color:#fff}
-.btn-export:hover{background:#ff6633}
-.btn-export:active{transform:scale(.98)}
-.btn-export:disabled{opacity:.25;cursor:not-allowed}
+.btn:disabled{opacity:.25;cursor:not-allowed}
 
-/* API KEY INPUT */
+/* API KEY */
 .api-input-wrap{position:relative;margin-bottom:10px}
-.api-input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:10px 40px 10px 12px;border-radius:8px;outline:none;transition:border-color .2s}
-.api-input:focus{border-color:var(--accent3)}
-.api-toggle-vis{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:4px}
+.api-input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:10px 40px 10px 12px;border-radius:8px;outline:none}
+.api-toggle-vis{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer}
 .api-status{font-size:10px;margin-top:6px;padding:6px 10px;border-radius:6px;display:none}
 .api-status.ok{display:block;background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.2);color:var(--green)}
-.api-status.err{display:block;background:rgba(255,68,0,.08);border:1px solid rgba(255,68,0,.2);color:var(--accent2)}
 
-/* GEMINI PROGRESS */
-.gemini-progress{display:none;margin-bottom:12px}
-.gemini-step{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border)}
-.gemini-step:last-child{border-bottom:none}
-.gemini-step .gs-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0}
-.gemini-step .gs-label{flex:1}
-.gemini-step.done{color:var(--green)}
-.gemini-step.active{color:var(--accent)}
-.gemini-step.active .gs-icon::after{content:'⟳';animation:spin .8s linear infinite;display:inline-block}
-
-/* SVG PREVIEW */
+/* PREVIEW */
 .svg-preview-wrap{background:#fff;border-radius:var(--r);display:flex;align-items:center;justify-content:center;min-height:200px;margin-bottom:12px;overflow:hidden;position:relative}
-.svg-empty{color:#999;font-size:11px;text-align:center;padding:40px;line-height:1.8}
 #svg-display svg{max-width:100%;max-height:260px;display:block}
-.svg-source-badge{position:absolute;top:8px;right:8px;font-size:9px;padding:3px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;font-weight:600;letter-spacing:.08em}
+.svg-source-badge{position:absolute;top:8px;right:8px;font-size:9px;padding:3px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;font-weight:600}
 .badge-auto{background:rgba(232,255,0,.15);border:1px solid var(--accent);color:var(--accent)}
 .badge-gemini{background:rgba(0,170,255,.15);border:1px solid var(--accent3);color:var(--accent3)}
 
 /* VARIANTS */
-.variants-scroll{display:none;overflow-x:auto;gap:10px;padding-bottom:6px;margin-bottom:12px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.variants-scroll::-webkit-scrollbar{display:none}
+.variants-scroll{display:none;overflow-x:auto;gap:10px;padding-bottom:6px;margin-bottom:12px}
 .variant-item{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px}
-.variant-thumb{width:80px;height:80px;border:2px solid var(--border);border-radius:8px;background:#fff;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .15s,transform .1s}
-.variant-thumb:active{transform:scale(.95)}
-.variant-thumb.selected{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,255,0,.25)}
+.variant-thumb{width:80px;height:80px;border:2px solid var(--border);border-radius:8px;background:#fff;overflow:hidden;cursor:pointer}
+.variant-thumb.selected{border-color:var(--accent)}
 .variant-thumb svg{width:100%;height:100%}
-.variant-label{font-size:9px;color:var(--muted);letter-spacing:.06em;text-align:center}
-
-/* MISC */
-.divider{height:1px;background:var(--border);margin:14px 0}
-.section-label{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:block}
-.hint{font-size:10px;color:var(--muted);line-height:1.7;margin-top:10px}
-.hint strong{color:var(--text)}
-.hint a{color:var(--accent3);text-decoration:none}
-.hint a:hover{text-decoration:underline}
+.variant-label{font-size:9px;color:var(--muted)}
 
 /* STATUS BAR */
-.status-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:10px 16px;padding-bottom:max(10px,env(safe-area-inset-bottom));font-size:10px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px;z-index:50}
-.status-bar .msg{flex:1}
+.status-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:10px 16px;padding-bottom:max(10px,env(safe-area-inset-bottom));font-size:10px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;z-index:50}
 .ok{color:var(--green)}.processing{color:var(--accent)}.err{color:var(--accent2)}
-.status-badge{font-size:9px;padding:3px 8px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);white-space:nowrap;flex-shrink:0}
 
-/* SPINNER */
+/* SPINNER / TOAST */
 .spinner-overlay{display:none;position:fixed;inset:0;background:rgba(10,10,10,.85);z-index:200;flex-direction:column;align-items:center;justify-content:center;gap:16px}
 .spinner-ring{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.spinner-text{font-size:12px;color:var(--accent);letter-spacing:.1em}
-
-/* TOAST */
-.toast{display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#2a0800;border:1px solid var(--accent2);color:var(--accent2);font-size:11px;padding:12px 20px;border-radius:8px;z-index:300;max-width:90vw;text-align:center;line-height:1.6;white-space:pre-line;box-shadow:0 4px 20px rgba(0,0,0,.6)}
+.toast{display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#2a0800;border:1px solid var(--accent2);color:var(--accent2);font-size:11px;padding:12px 20px;border-radius:8px;z-index:300}
 </style>
 </head>
 <body>
@@ -189,211 +142,76 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <div class="toast" id="toast"></div>
 
 <header>
-  <div class="logo"><em>SVG</em> Tracer<small>for Stencil Sheet Maker</small></div>
+  <div class="logo"><em>SVG</em> Tracer<small>High Precision Mode</small></div>
 </header>
 
 <div class="content">
 
   <div class="step-card" id="card1">
-    <div class="card-header">
-      <div class="card-num" id="cn1">1</div>
-      <div class="card-title">Load Image</div>
-    </div>
+    <div class="card-header"><div class="card-num">1</div><div class="card-title">Load Image</div></div>
     <div class="card-body">
       <div class="dropzone" id="dropzone">
-        <input type="file" id="file-input" accept="image/png,image/jpeg,image/gif,image/webp,image/bmp">
+        <input type="file" id="file-input" accept="image/*">
         <span class="dz-icon">🖼️</span>
         <div class="dz-title">タップして画像を選択</div>
-        <div class="dz-sub">カメラ · 写真ライブラリ · ファイル / PNG · JPG · WEBP</div>
       </div>
       <div class="file-ok" id="file-ok">
-        <span>✓</span>
-        <span id="file-name-disp" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span>
+        <span>✓</span><span id="file-name-disp" style="flex:1;overflow:hidden;text-overflow:ellipsis">—</span>
         <button class="chg" onclick="changeFile()">変更</button>
       </div>
-      <div id="img-preview-wrap">
-        <canvas id="canvas-original"></canvas>
-      </div>
+      <div id="img-preview-wrap"><canvas id="canvas-original"></canvas></div>
     </div>
   </div>
 
   <div class="step-card inactive" id="card2">
     <details>
-      <summary class="card-header" style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px">
-        <div class="card-num" id="cn2">2</div>
-        <div class="card-title">Trace Settings</div>
-        <span class="card-subtitle">タップで開く／閉じる ▼</span>
-      </summary>
-    <div class="card-body">
-      <span class="section-label">輪郭検出の調整</span>
-
-      <div class="ctrl">
-        <div class="ctrl-head">
-          <div class="ctrl-info">
-            <div class="ctrl-label">Threshold（しきい値）</div>
-            <div class="ctrl-desc">明暗の境界。低い→暗い部分のみ / 高い→広い範囲を検出</div>
-          </div>
-          <span class="ctrl-val" id="v-thresh">128</span>
+      <summary class="card-header" style="list-style:none;cursor:pointer"><div class="card-num">2</div><div class="card-title">Trace Settings ▼</div></summary>
+      <div class="card-body">
+        <div class="ctrl">
+          <div class="ctrl-head"><div class="ctrl-label">Threshold</div><span class="ctrl-val" id="v-thresh">128</span></div>
+          <input type="range" id="r-thresh" min="1" max="254" value="128">
         </div>
-        <input type="range" id="r-thresh" min="1" max="254" value="128">
-      </div>
-
-      <div class="ctrl">
-        <div class="ctrl-head">
-          <div class="ctrl-info">
-            <div class="ctrl-label">Smoothing（なめらかさ）</div>
-            <div class="ctrl-desc">輪郭のギザギザを平滑化。高いほど丸く</div>
-          </div>
-          <span class="ctrl-val" id="v-smooth">1.0</span>
+        <div class="ctrl">
+          <div class="ctrl-head"><div class="ctrl-label">Smoothing</div><span class="ctrl-val" id="v-smooth">1.0</span></div>
+          <input type="range" id="r-smooth" min="0" max="50" value="10">
         </div>
-        <input type="range" id="r-smooth" min="0" max="50" value="10">
-      </div>
-
-      <div class="ctrl">
-        <div class="ctrl-head">
-          <div class="ctrl-info">
-            <div class="ctrl-label">Min area（最小面積）</div>
-            <div class="ctrl-desc">この面積(px²)より小さい輪郭を除外。ノイズ除去に</div>
-          </div>
-          <span class="ctrl-val" id="v-minarea">40</span>
+        <div class="ctrl">
+          <div class="ctrl-head"><div class="ctrl-label">Min Area (px²)</div><span class="ctrl-val" id="v-minarea">20</span></div>
+          <input type="range" id="r-minarea" min="0" max="500" value="20" step="5">
         </div>
-        <input type="range" id="r-minarea" min="0" max="500" value="40" step="5">
-      </div>
-
-      <div class="divider"></div>
-      <span class="section-label">バリアント数</span>
-      <div class="chips" id="variant-chips" style="margin-bottom:14px">
-        <div class="chip active" data-n="3">3案</div>
-        <div class="chip" data-n="5">5案</div>
-        <div class="chip" data-n="7">7案</div>
-      </div>
-
-      <div class="divider"></div>
-      <span class="section-label">オプション</span>
-
-      <div class="toggle-row">
-        <div class="toggle-info">
-          <div class="toggle-label-text">島を除去（最大輪郭のみ残す）</div>
-          <div class="toggle-desc">孤立した小さな輪郭を削除しステンシルに最適化</div>
+        <div class="toggle-row">
+          <div class="toggle-label-text">島を除去（最大輪郭のみ）</div>
+          <label class="toggle"><input type="checkbox" id="ck-largest"><span class="toggle-track"></span></label>
         </div>
-        <label class="toggle"><input type="checkbox" id="ck-largest" checked><span class="toggle-track"></span></label>
-      </div>
-      <div class="toggle-row">
-        <div class="toggle-info">
-          <div class="toggle-label-text">反転（明るい部分を検出）</div>
-          <div class="toggle-desc">白背景に黒イラスト→OFF / 黒背景に白→ON</div>
+        <div class="toggle-row">
+          <div class="toggle-label-text">反転</div>
+          <label class="toggle"><input type="checkbox" id="ck-invert"><span class="toggle-track"></span></label>
         </div>
-        <label class="toggle"><input type="checkbox" id="ck-invert"><span class="toggle-track"></span></label>
+        <button class="btn btn-retrace" id="btn-retrace" onclick="runTrace(true)">↺ 再トレース</button>
       </div>
-      <div class="toggle-row">
-        <div class="toggle-info">
-          <div class="toggle-label-text">ベジェ曲線（なめらか）</div>
-          <div class="toggle-desc">ONで曲線パス、OFFで直線のみ</div>
-        </div>
-        <label class="toggle"><input type="checkbox" id="ck-bezier" checked><span class="toggle-track"></span></label>
-      </div>
-
-      <div style="margin-top:14px">
-        <button class="btn btn-retrace" id="btn-retrace" disabled onclick="runTrace(true)">
-          ↺ 設定を変えて再トレース
-        </button>
-      </div>
-    </div>
     </details>
   </div>
 
   <div class="step-card inactive" id="card4">
-    <div class="card-header">
-      <div class="card-num gemini">AI</div>
-      <div class="card-title">Gemini AI 高品質変換</div>
-    </div>
+    <div class="card-header"><div class="card-num gemini">AI</div><div class="card-title">Gemini AI Enhance</div></div>
     <div class="card-body">
-      <div class="hint" style="margin-bottom:12px">
-        <strong>gemini-2.5-flash-image</strong> に画像を渡し、ステンシル用白黒画像に変換してからSVGにトレースします。<br>
-        APIキーは<strong>このブラウザ内にのみ保存</strong>されサーバーへは送信されません。<br>
-        取得: <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a>
-      </div>
-
-      <span class="section-label">Gemini API キー</span>
       <div class="api-input-wrap">
-        <input type="password" class="api-input" id="api-key-input"
-               placeholder="AIza..." autocomplete="off" oninput="onApiKeyInput()">
-        <button class="api-toggle-vis" onclick="toggleApiVis()">👁</button>
+        <input type="password" class="api-input" id="api-key-input" placeholder="Gemini API Key" oninput="onApiKeyInput()">
       </div>
       <div class="api-status" id="api-status"></div>
-
-      <div class="divider"></div>
-      <span class="section-label">清書スタイル</span>
-      <div class="chips" id="style-chips" style="margin-bottom:14px">
-        <div class="chip active" data-style="standard">スタンダード</div>
-        <div class="chip" data-style="bold">太め・シンプル</div>
-        <div class="chip" data-style="fine">細かく精密</div>
-      </div>
-
-      <div class="gemini-progress" id="gemini-progress">
-        <div class="gemini-step" id="gs1"><span class="gs-icon">📤</span><span class="gs-label">Gemini 2.5 Flash Image に画像を送信中...</span></div>
-        <div class="gemini-step" id="gs2"><span class="gs-icon">🎨</span><span class="gs-label">ステンシル画像を受信中...</span></div>
-        <div class="gemini-step" id="gs3"><span class="gs-icon">✏️</span><span class="gs-label">SVGにトレース中...</span></div>
-        <div class="gemini-step" id="gs4"><span class="gs-icon">✅</span><span class="gs-label">完了</span></div>
-      </div>
-
-      <button class="btn btn-gemini" id="btn-gemini" disabled onclick="runGeminiEnhance()">
-        ✦ Gemini で高品質変換
-      </button>
-
-      <details style="margin-top:14px" id="debug-section">
-        <summary style="cursor:pointer;list-style:none;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent2);padding:6px 0;user-select:none">
-          🔧 Debug Mode ▼
-        </summary>
-        <div style="margin-top:10px">
-          <span class="section-label">カスタムプロンプト（空欄=デフォルト使用）</span>
-          <textarea id="debug-prompt" style="width:100%;height:90px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:10px;border-radius:6px;resize:vertical;outline:none;line-height:1.6" placeholder="例: Convert to bold black silhouette on pure white background..."></textarea>
-
-          <div class="divider"></div>
-          <span class="section-label">Gemini 出力画像プレビュー</span>
-          <div id="debug-img-wrap" style="display:none;margin-top:8px">
-            <div id="debug-img-label" style="font-size:10px;color:var(--muted);margin-bottom:6px;padding:6px 8px;background:var(--surface2);border-radius:6px">—</div>
-            <img id="debug-gemini-img" style="max-width:100%;border-radius:6px;display:none;border:1px solid var(--border)" alt="Gemini出力">
-            <div style="display:flex;gap:6px;margin-top:8px">
-              <button onclick="retraceDebugImg()" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:8px;border-radius:6px;cursor:pointer">↺ この画像で再トレース</button>
-              <button onclick="downloadDebugImg()" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:8px;border-radius:6px;cursor:pointer">↓ 画像を保存</button>
-            </div>
-          </div>
-          <div id="debug-img-empty" style="font-size:10px;color:var(--muted);padding:6px 0">Gemini実行後に結果がここに表示されます</div>
-        </div>
-      </details>
+      <button class="btn btn-gemini" id="btn-gemini" disabled onclick="runGeminiEnhance()">✦ Gemini で高品質変換</button>
     </div>
   </div>
 
   <div class="step-card inactive" id="card3">
-    <div class="card-header">
-      <div class="card-num" id="cn3">▶</div>
-      <div class="card-title">Result &amp; Export</div>
-    </div>
+    <div class="card-header"><div class="card-num">▶</div><div class="card-title">Result</div></div>
     <div class="card-body">
-      <span class="section-label">バリアントを選択</span>
       <div class="variants-scroll" id="variants-scroll"></div>
-
       <div class="svg-preview-wrap">
-        <div class="svg-empty" id="svg-empty">画像を読み込むと自動でSVGを生成します</div>
         <div id="svg-display"></div>
-        <div class="svg-source-badge" id="svg-source-badge" style="display:none"></div>
+        <div class="svg-source-badge" id="svg-source-badge"></div>
       </div>
-
-      <div class="divider"></div>
-      <span class="section-label">出力サイズ</span>
-      <div class="chips" id="size-chips" style="margin-bottom:14px">
-        <div class="chip active" data-size="original">元サイズ</div>
-        <div class="chip" data-size="100">100mm幅</div>
-        <div class="chip" data-size="50">50mm幅</div>
-      </div>
-
-      <button class="btn btn-export" id="btn-export" disabled onclick="exportSVG()">
-        ↓ Download default.svg
-      </button>
-      <div class="hint">
-        <strong>default.svg</strong> として保存後、MakerWorld Stencil Sheet Maker にアップロードして使用。
-      </div>
+      <button class="btn btn-export" id="btn-export" disabled onclick="exportSVG()">↓ Download default.svg</button>
     </div>
   </div>
 
@@ -401,100 +219,247 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 
 <div class="status-bar">
   <span class="msg ok" id="st-msg">画像を読み込んでください</span>
-  <span class="status-badge" id="st-badge">Ready</span>
+  <span id="st-badge">Ready</span>
 </div>
 
 <script>
 // ============================================================
-// STATE
+// STATE & CONFIG
 // ============================================================
 const S = {
   imgEl: null, imgW: 0, imgH: 0, imgBase64: '',
   variants: [], selectedVariant: 0,
-  variantCount: 3, exportSize: 'original',
-  geminiStyle: 'standard',
-  svgSource: 'auto',  // 'auto' | 'gemini'
+  variantCount: 3, geminiStyle: 'standard',
 };
-
-const TRACE_DIM = 400;
-// Image generation model: image-in → image-out (stencil conversion)
-const GEMINI_IMAGE_MODEL = 'gemini-2.5-flash-image';
+const TRACE_DIM = 600; // 精度向上のためトレース解像度を少しアップ
 
 // ============================================================
-// INIT — sliders & chips
+// CORE TRACER (HIGH PRECISION: Boundary Following)
 // ============================================================
-function bindSlider(rid, vid, fmt) {
-  const el = document.getElementById(rid);
-  const v  = document.getElementById(vid);
-  const upd = () => { v.textContent = fmt ? fmt(parseFloat(el.value)) : el.value; };
-  el.addEventListener('input', upd); upd();
-}
-bindSlider('r-thresh',  'v-thresh',  null);
-bindSlider('r-smooth',  'v-smooth',  v=>(v/10).toFixed(1));
-bindSlider('r-minarea', 'v-minarea', null);
 
-function initChips(id, cb) {
-  document.querySelectorAll(`#${id} .chip`).forEach(c => {
-    c.addEventListener('click', () => {
-      document.querySelectorAll(`#${id} .chip`).forEach(x=>x.classList.remove('active'));
-      c.classList.add('active'); cb(c);
-    });
+/**
+ * 境界追跡アルゴリズム（Moore-Neighbor Tracing改変版）
+ * イラストの輪郭を1ピクセルずつ正確に辿り、パスを生成します。
+ */
+function traceFromCanvas(canvas, threshold, smooth, minArea, invert, largestOnly) {
+  const W = canvas.width, H = canvas.height;
+  const ctx = canvas.getContext('2d');
+  const imageData = ctx.getImageData(0, 0, W, H);
+  const data = imageData.data;
+
+  // 1. 二値化マップの作成 (1=黒, 0=白)
+  const binary = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) {
+    const gray = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
+    let val = gray < threshold ? 1 : 0;
+    if (invert) val = 1 - val;
+    binary[i] = val;
+  }
+
+  // 2. 輪郭抽出 (Scan & Trace)
+  const visited = new Uint8Array(W * H);
+  const paths = [];
+
+  for (let y = 1; y < H - 1; y++) {
+    for (let x = 1; x < W - 1; x++) {
+      // 未訪問の黒ピクセルを見つけ、かつその上が白（境界）の場合に追跡開始
+      const idx = y * W + x;
+      if (binary[idx] === 1 && !visited[idx] && binary[idx - W] === 0) {
+        const contour = followContour(binary, visited, x, y, W, H);
+        if (contour && contour.length > 5) {
+          // 面積チェック（簡易的にバウンディングボックスまたは長さ）
+          if (contour.length >= minArea / 2) {
+            paths.push(contour);
+          }
+        }
+      }
+    }
+  }
+
+  if (paths.length === 0) return { svgStr: buildSVG([], W, H), pathCount: 0, w: W, h: H };
+
+  // 3. フィルタリング
+  let finalPaths = paths;
+  if (largestOnly) {
+    finalPaths = [paths.reduce((a, b) => a.length > b.length ? a : b)];
+  }
+
+  // 4. 平滑化 & SVGパス化
+  const iterations = Math.ceil(smooth * 2);
+  const svgPaths = finalPaths.map(pts => {
+    let p = pts;
+    if (iterations > 0) p = chaikinSmooth(p, iterations);
+    return toLinearPath(p);
   });
+
+  return { svgStr: buildSVG(svgPaths, W, H), pathCount: finalPaths.length, w: W, h: H };
 }
-initChips('variant-chips', c => { S.variantCount = parseInt(c.dataset.n); });
-initChips('size-chips',    c => { S.exportSize = c.dataset.size; });
-initChips('style-chips',   c => { S.geminiStyle = c.dataset.style; });
+
+/**
+ * 境界を辿るメインロジック
+ */
+function followContour(binary, visited, startX, startY, W, H) {
+  const points = [];
+  let cx = startX, cy = startY;
+  let dx = 0, dy = -1; // 初期進行方向：上
+
+  // 時計回りに隣接ピクセルを調べるための相対座標
+  const neighbors = [[0,-1],[1,-1],[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1]];
+
+  let first = true;
+  let limit = W * H; // 無限ループ防止
+
+  while (limit-- > 0) {
+    points.push([cx, cy]);
+    visited[cy * W + cx] = 1;
+
+    // 現在の方向から左後ろ（45度ずつ）から順に周囲をスキャン
+    let found = false;
+    let dirIdx = neighbors.findIndex(n => n[0] === dx && n[1] === dy);
+    // 開始方向を少し左へずらす
+    let startScan = (dirIdx + 5) % 8;
+
+    for (let i = 0; i < 8; i++) {
+      let checkIdx = (startScan + i) % 8;
+      let nx = cx + neighbors[checkIdx][0];
+      let ny = cy + neighbors[checkIdx][1];
+
+      if (nx >= 0 && nx < W && ny >= 0 && ny < H && binary[ny * W + nx] === 1) {
+        dx = neighbors[checkIdx][0];
+        dy = neighbors[checkIdx][1];
+        cx = nx;
+        cy = ny;
+        found = true;
+        break;
+      }
+    }
+
+    if (!found || (cx === startX && cy === startY)) break;
+  }
+  return points;
+}
+
+function chaikinSmooth(pts, iterations) {
+  let p = pts;
+  for (let it = 0; it < iterations; it++) {
+    const out = [], n = p.length;
+    for (let i = 0; i < n; i++) {
+      const a = p[i], b = p[(i + 1) % n];
+      out.push([0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]]);
+      out.push([0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1]]);
+    }
+    p = out;
+  }
+  return p;
+}
+
+function toLinearPath(pts) {
+  if (!pts.length) return '';
+  let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+  for (let i = 1; i < pts.length; i++) {
+    d += ` L ${pts[i][0].toFixed(1)} ${pts[i][1].toFixed(1)}`;
+  }
+  return d + ' Z';
+}
+
+function buildSVG(pathStrs, w, h) {
+  const body = pathStrs.map(d => `  <path d="${d}" fill="black" fill-rule="evenodd"/>`).join('\n');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">\n${body}\n</svg>`;
+}
 
 // ============================================================
-// FILE LOAD
+// UI & GEMINI LOGIC (Modified to support CamelCase)
 // ============================================================
-const dz = document.getElementById('dropzone');
-dz.addEventListener('dragover', e=>{e.preventDefault();dz.classList.add('over')});
-dz.addEventListener('dragleave', ()=>dz.classList.remove('over'));
-dz.addEventListener('drop', e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0])});
-document.getElementById('file-input').addEventListener('change', e=>{if(e.target.files[0])loadFile(e.target.files[0])});
-function changeFile(){document.getElementById('file-input').click()}
+async function runTrace(isManual) {
+  if (!S.imgEl) return;
+  showSpinner(true, 'トレース中...');
+  await new Promise(r => setTimeout(r, 50));
+
+  const thresh = parseInt(document.getElementById('r-thresh').value);
+  const smooth = parseFloat(document.getElementById('r-smooth').value) / 10;
+  const minArea = parseInt(document.getElementById('r-minarea').value);
+  const invert = document.getElementById('ck-invert').checked;
+  const largest = document.getElementById('ck-largest').checked;
+
+  // バリアント生成
+  const n = 3;
+  S.variants = [];
+  const steps = [-20, 0, 20];
+  for (let step of steps) {
+    const t = Math.max(5, Math.min(250, thresh + step));
+    S.variants.push({ ...traceFromCanvas(document.getElementById('canvas-original'), t, smooth, minArea, invert, largest), threshold: t, source: 'auto' });
+  }
+
+  S.selectedVariant = 1;
+  renderVariants();
+  showVariant(1);
+  document.getElementById('card3').classList.remove('inactive');
+  document.getElementById('btn-export').disabled = false;
+  showSpinner(false);
+  setMsg('ok', 'トレース完了');
+}
+
+async function runGeminiEnhance() {
+  const apiKey = document.getElementById('api-key-input').value.trim();
+  if (!apiKey || !S.imgBase64) return;
+  showSpinner(true, 'Gemini AI が画像を分析・清書中...');
+
+  try {
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [
+          { text: "Convert this to a clean black and white stencil. Pure white background, pure black shapes only. No gradients." },
+          { inlineData: { mimeType: 'image/jpeg', data: S.imgBase64 } }
+        ]}],
+        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+      })
+    });
+    const data = await resp.json();
+    const imgPart = data?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+    if (!imgPart) throw new Error("画像が返されませんでした");
+
+    const img = new Image();
+    img.onload = () => {
+      const cv = document.createElement('canvas');
+      cv.width = img.width; cv.height = img.height;
+      cv.getContext('2d').drawImage(img, 0, 0);
+      const res = traceFromCanvas(cv, 128, 1.0, 20, false, false);
+      S.variants = [{ ...res, threshold: 128, source: 'gemini' }];
+      S.selectedVariant = 0;
+      renderVariants();
+      showVariant(0);
+      showSpinner(false);
+    };
+    img.src = `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
+  } catch (e) {
+    showSpinner(false);
+    showToast("Error: " + e.message);
+  }
+}
+
+// ── 以下、ユーティリティ（ファイル読み込み、ボタン制御など） ──
 
 function loadFile(file) {
-  setMsg('processing', '画像を読み込み中...');
   const url = URL.createObjectURL(file);
   const img = new Image();
   img.onload = async () => {
     S.imgEl = img;
-
-    // Downscale to TRACE_DIM
-    let w = img.naturalWidth, h = img.naturalHeight;
-    const ratio = TRACE_DIM / Math.max(w, h);
-    w = Math.round(w * ratio); h = Math.round(h * ratio);
-    S.imgW = w; S.imgH = h;
-
+    const ratio = TRACE_DIM / Math.max(img.width, img.height);
+    S.imgW = Math.round(img.width * ratio);
+    S.imgH = Math.round(img.height * ratio);
     const canvas = document.getElementById('canvas-original');
-    canvas.width = w; canvas.height = h;
-    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-
-    // Store base64 for Gemini (use original, higher res for AI)
+    canvas.width = S.imgW; canvas.height = S.imgH;
+    canvas.getContext('2d').drawImage(img, 0, 0, S.imgW, S.imgH);
     S.imgBase64 = await fileToBase64(file);
-
     document.getElementById('img-preview-wrap').style.display = 'block';
     document.getElementById('dropzone').style.display = 'none';
-    const bar = document.getElementById('file-ok');
-    bar.style.display = 'flex';
+    document.getElementById('file-ok').style.display = 'flex';
     document.getElementById('file-name-disp').textContent = file.name;
-
-    // Activate settings cards
     document.getElementById('card2').classList.remove('inactive');
     document.getElementById('card4').classList.remove('inactive');
-    document.getElementById('btn-retrace').disabled = false;
-    checkGeminiBtn();
-
-    URL.revokeObjectURL(url);
-
-    // AUTO TRACE immediately
-    await runTrace(false);
-  };
-  img.onerror = () => {
-    showToast('画像の読み込みに失敗しました。\n対応形式: PNG · JPG · WEBP · GIF · BMP');
-    URL.revokeObjectURL(url);
+    runTrace(false);
   };
   img.src = url;
 }
@@ -502,538 +467,56 @@ function loadFile(file) {
 async function fileToBase64(file) {
   return new Promise(resolve => {
     const reader = new FileReader();
-    reader.onload = e => {
-      const dataUrl = e.target.result;
-      resolve(dataUrl.split(',')[1]);
-    };
+    reader.onload = e => resolve(e.target.result.split(',')[1]);
     reader.readAsDataURL(file);
   });
 }
 
-// ============================================================
-// AUTO / MANUAL TRACE
-// ============================================================
-async function runTrace(isManual) {
-  if (!S.imgEl) return;
-  const label = isManual ? '再トレース中...' : '自動トレース中...';
-  showSpinner(true, label);
-  setMsg('processing', label);
-  await new Promise(r=>setTimeout(r,30));
-
-  try {
-    const thresh  = parseInt(document.getElementById('r-thresh').value);
-    const smooth  = parseFloat(document.getElementById('r-smooth').value)/10;
-    const minArea = parseInt(document.getElementById('r-minarea').value);
-    const invert  = document.getElementById('ck-invert').checked;
-    const bezier  = document.getElementById('ck-bezier').checked;
-    const largest = document.getElementById('ck-largest').checked;
-    const n = S.variantCount;
-
-    const half = Math.floor(n/2);
-    const step = Math.max(15, Math.floor(60/Math.max(1,n-1)));
-    const thresholds = Array.from({length:n},(_,i)=>Math.max(5,Math.min(250,thresh+(i-half)*step)));
-
-    S.variants = [];
-    for (const t of thresholds) {
-      await new Promise(r=>setTimeout(r,5));
-      try {
-        S.variants.push({...traceImage(t,smooth,minArea,invert,bezier,largest), threshold:t, source:'auto'});
-      } catch(e) {
-        S.variants.push({svgStr:buildSVG([],S.imgW,S.imgH), pathCount:0, w:S.imgW, h:S.imgH, threshold:t, source:'auto'});
-      }
-    }
-
-    S.selectedVariant = Math.floor(n/2);
-    S.svgSource = 'auto';
-    renderVariants();
-    showVariant(S.selectedVariant);
-    showResultCard();
-    document.getElementById('btn-export').disabled = false;
-    const v = S.variants[S.selectedVariant];
-    setMsg('ok', isManual ? `✓ 再トレース完了 — ${n}案から選択してください` : `✓ 自動変換完了 — 設定を変えるか Gemini で高品質変換できます`);
-    setBadge(`${v.pathCount}パス`);
-  } catch(e) {
-    setMsg('err', 'トレースエラー');
-    showToast(`エラーが発生しました:\n${e.message}`);
-  }
-  showSpinner(false);
-}
-
-// ============================================================
-// GEMINI AI ENHANCE
-// ============================================================
-function onApiKeyInput() {
-  const key = document.getElementById('api-key-input').value.trim();
-  localStorage.setItem('gemini_api_key', key);
-  const st = document.getElementById('api-status');
-  if (key.startsWith('AIza') && key.length > 20) {
-    st.textContent = '✓ APIキーが設定されました';
-    st.className = 'api-status ok';
-  } else if (key.length > 0) {
-    st.textContent = '⚠ AIzaで始まるキーを入力してください';
-    st.className = 'api-status err';
-  } else {
-    st.className = 'api-status';
-  }
-  checkGeminiBtn();
-}
-
-function toggleApiVis() {
-  const el = document.getElementById('api-key-input');
-  el.type = el.type === 'password' ? 'text' : 'password';
-}
-
-function checkGeminiBtn() {
-  const key = document.getElementById('api-key-input').value.trim();
-  const hasImage = !!S.imgEl;
-  document.getElementById('btn-gemini').disabled = !(key.startsWith('AIza') && key.length > 20 && hasImage);
-}
-
-// Restore saved key
-window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('gemini_api_key');
-  if (saved) {
-    document.getElementById('api-key-input').value = saved;
-    onApiKeyInput();
-  }
-});
-
-// ============================================================
-// GEMINI AI ENHANCE (修正版: キャメルケース対応)
-// ============================================================
-
-// スタイル別プロンプト
-const GEMINI_PROMPTS = {
-  standard: `Convert this illustration into a printable stencil image for a 3D printer.
-Requirements:
-- Pure white (#FFFFFF) background
-- Pure black (#000000) for all shapes — no grays, no gradients
-- Solid black fills for dark areas (hair, hat, clothing)
-- Clear black outlines for face, body, and key facial features (eyes, nose, mouth, smile)
-- Remove the original background completely
-- All shapes must be connected to each other — avoid isolated floating pieces
-- Clean smooth edges
-Output: flat black and white image only. No text, no explanation.`,
-
-  bold: `Convert this illustration into a bold stencil silhouette.
-Requirements:
-- Pure white background
-- Solid black fills only — simplified bold shapes
-- Remove all fine details, keep only the main recognizable silhouette
-- All shapes must be connected — no isolated floating pieces
-Output: bold black silhouette on white. No text.`,
-
-  fine: `Convert this illustration into a detailed stencil image.
-Requirements:
-- Pure white background
-- Black outlines preserving fine details: eyes, expression, hair lines, clothing
-- Thin clean black lines on white background
-- Remove all colors and gradients, keep all detail
-- Avoid isolated floating shapes where possible
-Output: detailed black line art on white. No text.`
-};
-
-async function runGeminiEnhance() {
-  const apiKey = document.getElementById('api-key-input').value.trim();
-  if (!apiKey || !S.imgBase64) return;
-
-  showGeminiProgress(true);
-  setMsg('processing', 'Gemini でステンシル変換中...');
-
-  try {
-    // ── Step 1: 画像をGeminiに送信 ──
-    setGeminiStep(1, 'active');
-
-    const customPrompt = document.getElementById('debug-prompt')?.value?.trim();
-    const prompt = customPrompt || GEMINI_PROMPTS[S.geminiStyle] || GEMINI_PROMPTS.standard;
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
-
-    let resp;
-    try {
-      resp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({
-            contents: [{ parts: [
-              { text: prompt },
-              // ✅ 修正: inlineData と mimeType (キャメルケース)
-              { inlineData: { mimeType: 'image/jpeg', data: S.imgBase64 } }
-            ]}],
-            generationConfig: {
-              responseModalities: ['TEXT', 'IMAGE'],
-              temperature: 1.0
-            }
-          })
-        }
-      );
-    } catch(fetchErr) {
-      clearTimeout(timeoutId);
-      if (fetchErr.name === 'AbortError') {
-        throw new Error('タイムアウト: Geminiの応答に90秒以上かかりました。再度お試しください。');
-      }
-      throw fetchErr;
-    }
-    clearTimeout(timeoutId);
-
-    const data = await resp.json().catch(() => null);
-    const parts = data?.candidates?.[0]?.content?.parts || [];
-
-    if (!resp.ok) {
-      const errMsg = data?.error?.message || `HTTP ${resp.status}`;
-      showDebugResult(null, null, `APIエラー: ${errMsg}`);
-      throw new Error(errMsg);
-    }
-    setGeminiStep(1, 'done');
-
-    // ── Step 2: 画像パートを抽出 ──
-    setGeminiStep(2, 'active');
-    let imgB64 = null, imgMime = 'image/png';
-    for (const part of parts) {
-      // ✅ 修正: inlineData と mimeType (キャメルケース)
-      if (part.inlineData?.data) {
-        imgB64  = part.inlineData.data;
-        imgMime = part.inlineData.mimeType || 'image/png';
-        break;
-      }
-    }
-
-    if (!imgB64) {
-      throw new Error(`Geminiが画像を返しませんでした。`);
-    }
-
-    showDebugResult(imgB64, imgMime, null);
-    setGeminiStep(2, 'done');
-
-    // ── Step 3: トレース ──
-    setGeminiStep(3, 'active');
-    await new Promise(r => setTimeout(r, 20));
-    await traceFromBase64(imgB64, imgMime);
-    setGeminiStep(3, 'done');
-    setGeminiStep(4, 'done');
-
-    renderVariants();
-    showVariant(0);
-    showResultCard();
-    document.getElementById('btn-export').disabled = false;
-    S.svgSource = 'gemini';
-    showBadge('gemini');
-    setMsg('ok', `✓ Gemini変換完了 — ${S.variants[0]?.pathCount || 0}パス`);
-    setBadge(`Gemini · ${S.variants[0]?.pathCount || 0}パス`);
-
-  } catch(e) {
-    setMsg('err', 'Gemini エラー: ' + e.message);
-    showToast(`Gemini API エラー:\n${e.message}`);
-  }
-  showGeminiProgress(false);
-}
-
-async function traceFromBase64(base64, mimeType) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const ratio = TRACE_DIM / Math.max(img.naturalWidth, img.naturalHeight);
-      const w = Math.round(img.naturalWidth * ratio);
-      const h = Math.round(img.naturalHeight * ratio);
-      const cv = document.createElement('canvas');
-      cv.width = w; cv.height = h;
-      cv.getContext('2d').drawImage(img, 0, 0, w, h);
-      try {
-        const result = traceFromCanvas(cv, 140, 3.0, 20, false, true, true);
-        S.variants = [{ ...result, threshold: 140, source: 'gemini' }];
-        S.selectedVariant = 0;
-        resolve();
-      } catch(e) { reject(e); }
-    };
-    img.onerror = () => reject(new Error('Gemini画像の読み込みに失敗'));
-    img.src = `data:${mimeType};base64,${base64}`;
-  });
-}
-
-// ============================================================
-// CORE TRACER
-// ============================================================
-function traceImage(threshold, smooth, minArea, invert, useBezier, largestOnly) {
-  const canvas = document.getElementById('canvas-original');
-  return traceFromCanvas(canvas, threshold, smooth, minArea, invert, useBezier, largestOnly);
-}
-
-function traceFromCanvas(canvas, threshold, smooth, minArea, invert, useBezier, largestOnly) {
-  const W = canvas.width, H = canvas.height;
-  if (W===0||H===0) throw new Error('画像サイズが0です');
-
-  const data = canvas.getContext('2d').getImageData(0,0,W,H).data;
-  const PW = W+2;
-  const B = new Uint8Array(PW*(H+2));
-
-  for (let y=0;y<H;y++) {
-    for (let x=0;x<W;x++) {
-      const i=y*W+x;
-      const gray=0.299*data[i*4]+0.587*data[i*4+1]+0.114*data[i*4+2];
-      let fg=gray<threshold?1:0;
-      if(invert) fg^=1;
-      B[(y+1)*PW+(x+1)]=fg;
-    }
-  }
-
-  const label=new Int32Array(PW*(H+2));
-  const compPts=[];
-  let nextLabel=1;
-
-  for (let y=1;y<=H;y++) {
-    for (let x=1;x<=W;x++) {
-      if(B[y*PW+x]!==1||label[y*PW+x]!==0) continue;
-      const pts=[]; const queue=[y*PW+x]; label[y*PW+x]=nextLabel; let head=0;
-      while(head<queue.length) {
-        const idx=queue[head++];
-        const cx=idx%PW, cy=(idx/PW)|0;
-        pts.push([cx-1,cy-1]);
-        for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
-          const ni=(cy+dy)*PW+(cx+dx);
-          if(B[ni]===1&&label[ni]===0){label[ni]=nextLabel;queue.push(ni)}
-        }
-      }
-      compPts.push(pts); nextLabel++;
-    }
-  }
-
-  if(compPts.length===0) return {svgStr:buildSVG([],W,H),pathCount:0,w:W,h:H};
-
-  let comps=compPts.filter(p=>p.length>=minArea);
-  if(comps.length===0) comps=[compPts.reduce((a,b)=>a.length>b.length?a:b)];
-  if(largestOnly) comps=[comps.reduce((a,b)=>a.length>b.length?a:b)];
-
-  const pathStrs=comps.map(pts=>{
-    const poly=extractBoundary(pts,W,H);
-    const smoothed=chaikinSmooth(poly,Math.ceil(smooth*3));
-    const down=downsample(smoothed,250);
-    return useBezier?toCubic(down):toLinear(down);
-  }).filter(Boolean);
-
-  return {svgStr:buildSVG(pathStrs,W,H),pathCount:comps.length,w:W,h:H};
-}
-
-function extractBoundary(pts) {
-  const rows=new Map();
-  for(const [x,y] of pts) {
-    if(!rows.has(y)) rows.set(y,[x,x]);
-    else{const r=rows.get(y);if(x<r[0])r[0]=x;if(x>r[1])r[1]=x}
-  }
-  const sortedRows=[...rows.keys()].sort((a,b)=>a-b);
-  if(sortedRows.length===0) return [];
-  const topEdge=[],botEdge=[];
-  for(const y of sortedRows){
-    const[lx,rx]=rows.get(y);
-    topEdge.push([lx,y]); botEdge.push([rx,y]);
-  }
-  return [...topEdge,...[...botEdge].reverse()];
-}
-
-function chaikinSmooth(pts,iterations) {
-  if(pts.length<4||iterations<=0) return pts;
-  let p=pts;
-  for(let it=0;it<iterations;it++){
-    const out=[],n=p.length;
-    for(let i=0;i<n;i++){
-      const a=p[i],b=p[(i+1)%n];
-      out.push([.75*a[0]+.25*b[0],.75*a[1]+.25*b[1]]);
-      out.push([.25*a[0]+.75*b[0],.25*a[1]+.75*b[1]]);
-    }
-    p=out;
-  }
-  return p;
-}
-
-function downsample(pts,max){
-  if(pts.length<=max) return pts;
-  const stride=Math.ceil(pts.length/max);
-  return pts.filter((_,i)=>i%stride===0);
-}
-
-function toLinear(pts){
-  if(!pts.length) return '';
-  let d=`M ${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
-  for(let i=1;i<pts.length;i++) d+=` L ${pts[i][0].toFixed(2)} ${pts[i][1].toFixed(2)}`;
-  return d+' Z';
-}
-
-function toCubic(pts){
-  if(pts.length<2) return '';
-  const n=pts.length,t=.3;
-  let d=`M ${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
-  for(let i=0;i<n;i++){
-    const p0=pts[(i-1+n)%n],p1=pts[i],p2=pts[(i+1)%n],p3=pts[(i+2)%n];
-    const cp1x=p1[0]+(p2[0]-p0[0])*t,cp1y=p1[1]+(p2[1]-p0[1])*t;
-    const cp2x=p2[0]-(p3[0]-p1[0])*t,cp2y=p2[1]-(p3[1]-p1[1])*t;
-    d+=` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2[0].toFixed(2)} ${p2[1].toFixed(2)}`;
-  }
-  return d+' Z';
-}
-
-function buildSVG(pathStrs,w,h){
-  const body=pathStrs.map(d=>`  <path d="${d}" fill="black" fill-rule="evenodd"/>`).join('\n');
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">\n${body}\n</svg>`;
-}
-
-// ============================================================
-// VARIANTS & DISPLAY
-// ============================================================
 function renderVariants() {
-  const scroll=document.getElementById('variants-scroll');
-  scroll.innerHTML=''; scroll.style.display='flex';
-  S.variants.forEach((v,i)=>{
-    const item=document.createElement('div'); item.className='variant-item';
-    const thumb=document.createElement('div');
-    thumb.className='variant-thumb'+(i===S.selectedVariant?' selected':'');
-    thumb.innerHTML=v.svgStr;
-    thumb.addEventListener('click',()=>{
-      document.querySelectorAll('.variant-thumb').forEach(t=>t.classList.remove('selected'));
-      thumb.classList.add('selected'); S.selectedVariant=i; showVariant(i);
-    });
-    const lbl=document.createElement('div'); lbl.className='variant-label';
-    const src=v.source==='gemini'?'AI':'T:'+v.threshold;
-    lbl.textContent=`${src} / ${v.pathCount}p`;
-    item.appendChild(thumb); item.appendChild(lbl); scroll.appendChild(item);
+  const scroll = document.getElementById('variants-scroll');
+  scroll.innerHTML = ''; scroll.style.display = 'flex';
+  S.variants.forEach((v, i) => {
+    const item = document.createElement('div'); item.className = 'variant-item';
+    const thumb = document.createElement('div');
+    thumb.className = 'variant-thumb' + (i === S.selectedVariant ? ' selected' : '');
+    thumb.innerHTML = v.svgStr;
+    thumb.onclick = () => { S.selectedVariant = i; renderVariants(); showVariant(i); };
+    item.appendChild(thumb);
+    scroll.appendChild(item);
   });
 }
 
 function showVariant(idx) {
-  const v=S.variants[idx];
-  document.getElementById('svg-empty').style.display='none';
-  const disp=document.getElementById('svg-display');
-  disp.innerHTML=v.svgStr;
-  const svg=disp.querySelector('svg');
-  if(svg){svg.style.maxWidth='100%';svg.style.maxHeight='260px'}
-  setBadge(`${v.pathCount}パス`);
-  showBadge(v.source==='gemini'||v.source==='gemini-enhanced'?'gemini':'auto');
+  const v = S.variants[idx];
+  document.getElementById('svg-display').innerHTML = v.svgStr;
+  const b = document.getElementById('svg-source-badge');
+  b.textContent = v.source === 'gemini' ? '✦ Gemini' : 'Auto';
+  b.className = 'svg-source-badge ' + (v.source === 'gemini' ? 'badge-gemini' : 'badge-auto');
+  document.getElementById('st-badge').textContent = `${v.pathCount} Paths`;
 }
 
-function showBadge(type) {
-  const b=document.getElementById('svg-source-badge');
-  b.style.display='block';
-  if(type==='gemini'){b.className='svg-source-badge badge-gemini';b.textContent='✦ Gemini AI';}
-  else{b.className='svg-source-badge badge-auto';b.textContent='Auto';}
-}
-
-function showResultCard() {
-  document.getElementById('card3').classList.remove('inactive');
-}
-
-// ============================================================
-// GEMINI PROGRESS UI
-// ============================================================
-function showGeminiProgress(show) {
-  const p=document.getElementById('gemini-progress');
-  p.style.display=show?'block':'none';
-  if(show){
-    ['gs1','gs2','gs3','gs4'].forEach(id=>{
-      document.getElementById(id).className='gemini-step';
-    });
-  }
-  document.getElementById('btn-gemini').disabled=show;
-}
-
-function setGeminiStep(n, state) {
-  const el=document.getElementById('gs'+n);
-  el.className='gemini-step '+state;
-}
-
-// ============================================================
-// DEBUG
-// ============================================================
-let _dbgB64 = null, _dbgMime = null;
-
-function showDebugResult(b64, mime, message) {
-  _dbgB64 = b64; _dbgMime = mime;
-  const wrap  = document.getElementById('debug-img-wrap');
-  const empty = document.getElementById('debug-img-empty');
-  const label = document.getElementById('debug-img-label');
-  const img   = document.getElementById('debug-gemini-img');
-
-  wrap.style.display  = 'block';
-  empty.style.display = 'none';
-  document.getElementById('debug-section').open = true;
-
-  if (b64) {
-    img.src = `data:${mime};base64,${b64}`;
-    img.style.display = 'block';
-    label.textContent = `✓ Gemini出力画像 (${mime})`;
-    label.style.color = 'var(--green)';
-  } else {
-    img.style.display = 'none';
-    label.textContent = message || '—';
-    label.style.color = 'var(--accent2)';
-  }
-}
-
-async function retraceDebugImg() {
-  if (!_dbgB64) return;
-  showSpinner(true, 'Gemini画像を再トレース中...');
-  await new Promise(r => setTimeout(r, 30));
-  try {
-    await traceFromBase64(_dbgB64, _dbgMime || 'image/png');
-    renderVariants();
-    showVariant(0);
-    showResultCard();
-    document.getElementById('btn-export').disabled = false;
-    showBadge('gemini');
-    setMsg('ok', '✓ Gemini画像を再トレースしました');
-  } catch(e) {
-    showToast('再トレースエラー: ' + e.message);
-  }
-  showSpinner(false);
-}
-
-function downloadDebugImg() {
-  if (!_dbgB64) return;
+function exportSVG() {
+  const v = S.variants[S.selectedVariant];
+  const blob = new Blob([v.svgStr], { type: 'image/svg+xml' });
   const a = document.createElement('a');
-  a.href = `data:${_dbgMime || 'image/png'};base64,${_dbgB64}`;
-  a.download = 'gemini_output.png';
+  a.href = URL.createObjectURL(blob); a.download = 'default.svg';
   a.click();
 }
 
-// ============================================================
-// EXPORT
-// ============================================================
-function exportSVG() {
-  const v=S.variants[S.selectedVariant];
-  if(!v) return;
-  let s=v.svgStr;
-  if(S.exportSize!=='original'){
-    const tw=S.exportSize==='100'?100:50;
-    const th=((v.h/v.w)*tw).toFixed(2);
-    s=s.replace(/width="[^"]*"/,`width="${tw}mm"`).replace(/height="[^"]*"/,`height="${th}mm"`);
-  }
-  const src=v.source==='gemini'?'Gemini AI Enhanced':'Auto Trace';
-  s=s.replace('<svg ',`\n<svg `);
-  const blob=new Blob([s],{type:'image/svg+xml'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download='default.svg';
-  a.click(); URL.revokeObjectURL(a.href);
-  setMsg('ok','✓ default.svg をダウンロードしました');
+const dz = document.getElementById('dropzone');
+dz.onclick = () => document.getElementById('file-input').click();
+document.getElementById('file-input').onchange = e => { if (e.target.files[0]) loadFile(e.target.files[0]); };
+function changeFile() { document.getElementById('file-input').click(); }
+function onApiKeyInput() { 
+  const key = document.getElementById('api-key-input').value;
+  document.getElementById('btn-gemini').disabled = key.length < 20;
 }
-
-// ============================================================
-// UI HELPERS
-// ============================================================
-function showSpinner(show,text='処理中...'){
-  document.getElementById('spinner').style.display=show?'flex':'none';
-  document.getElementById('spinner-text').textContent=text;
+function showSpinner(show, text) { 
+  document.getElementById('spinner').style.display = show ? 'flex' : 'none';
+  document.getElementById('spinner-text').textContent = text;
 }
-function setMsg(type,msg){
-  const el=document.getElementById('st-msg');
-  el.textContent=msg; el.className='msg '+type;
-}
-function setBadge(text){document.getElementById('st-badge').textContent=text}
-function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.style.display='block';
-  setTimeout(()=>{t.style.display='none'},7000);
-}
+function setMsg(type, msg) { const el = document.getElementById('st-msg'); el.textContent = msg; el.className = 'msg ' + type; }
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
 </script>
 </body>
 </html>
