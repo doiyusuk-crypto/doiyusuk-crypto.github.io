@@ -226,7 +226,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 
 <div class="spinner-overlay" id="spinner">
  <div class="spinner-ring"></div>
- <div class="spinner-text" id="spinner-text">処理中...</div>
+ <div class="spinner-text" id="spinner-text">Processing...</div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -245,19 +245,19 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
      <div class="dropzone" id="dropzone">
        <input type="file" id="file-input" accept="image/png,image/jpeg,image/gif,image/webp,image/bmp">
        <span class="dz-icon">🖼️</span>
-       <div class="dz-title">タップして画像を選択</div>
-       <div class="dz-sub">カメラ · 写真ライブラリ · ファイル / PNG · JPG · WEBP</div>
+       <div class="dz-title">Tap to select an image</div>
+       <div class="dz-sub">Camera · Photo library · Files / PNG · JPG · WEBP</div>
      </div>
      <div class="file-ok" id="file-ok">
        <span>✓</span>
        <span id="file-name-disp" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span>
-       <button class="chg" onclick="changeFile()">変更</button>
+       <button class="chg" onclick="changeFile()">Change</button>
      </div>
      <div id="img-preview-wrap">
        <div class="editor-toolbar" id="crop-toolbar-orig" style="display:none">
-         <button class="etool" id="btn-crop-orig" onclick="toggleCropMode('orig')">✂️ トリミング</button>
-         <button class="etool" id="btn-crop-apply-orig" onclick="applyCrop('orig')" style="display:none">✓ 適用</button>
-         <button class="etool" id="btn-crop-cancel-orig" onclick="cancelCrop('orig')" style="display:none">✕ キャンセル</button>
+         <button class="etool" id="btn-crop-orig" onclick="toggleCropMode('orig')">✂️ Crop</button>
+         <button class="etool" id="btn-crop-apply-orig" onclick="applyCrop('orig')" style="display:none">✓ Apply</button>
+         <button class="etool" id="btn-crop-cancel-orig" onclick="cancelCrop('orig')" style="display:none">✕ Cancel</button>
        </div>
        <div class="editor-wrap" id="orig-editor-wrap">
          <canvas id="canvas-original"></canvas>
@@ -275,24 +275,29 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
          </div>
        </div>
      </div>
+     <div style="margin-top:14px">
+       <button class="btn btn-retrace" id="btn-retrace" disabled onclick="runTrace(true)">
+         ↺ Re-trace with New Settings
+       </button>
+     </div>
    </div>
  </div>
 
  <div class="step-card inactive" id="card2">
    <details>
      <summary class="card-header" style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px">
-       <div class="card-num" id="cn2">2</div>
+       <div class="card-num" id="cn2">🔨</div>
        <div class="card-title">Trace Settings</div>
-       <span class="card-subtitle">タップで開く／閉じる ▼</span>
+       <span class="card-subtitle">Tap to expand ▼</span>
      </summary>
    <div class="card-body">
-     <span class="section-label">輪郭検出の調整</span>
+     <span class="section-label">Contour Detection</span>
 
      <div class="ctrl">
        <div class="ctrl-head">
          <div class="ctrl-info">
-           <div class="ctrl-label">Threshold（しきい値）</div>
-           <div class="ctrl-desc">明暗の境界。低い→暗い部分のみ / 高い→広い範囲を検出</div>
+           <div class="ctrl-label">Threshold</div>
+           <div class="ctrl-desc">Light/dark boundary. Lower → detect only dark areas / Higher → detect wider range</div>
          </div>
          <span class="ctrl-val" id="v-thresh">128</span>
        </div>
@@ -302,8 +307,8 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
      <div class="ctrl">
        <div class="ctrl-head">
          <div class="ctrl-info">
-           <div class="ctrl-label">Smoothing（なめらかさ）</div>
-           <div class="ctrl-desc">輪郭のギザギザを平滑化。高いほど丸く</div>
+           <div class="ctrl-label">Smoothing</div>
+           <div class="ctrl-desc">Smooths jagged contours. Higher → more rounded</div>
          </div>
          <span class="ctrl-val" id="v-smooth">1.0</span>
        </div>
@@ -313,8 +318,8 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
      <div class="ctrl">
        <div class="ctrl-head">
          <div class="ctrl-info">
-           <div class="ctrl-label">Min area（最小面積）</div>
-           <div class="ctrl-desc">この面積(px²)より小さい輪郭を除外。ノイズ除去に</div>
+           <div class="ctrl-label">Min Area</div>
+           <div class="ctrl-desc">Exclude contours smaller than this area (px²). Useful for noise removal</div>
          </div>
          <span class="ctrl-val" id="v-minarea">40</span>
        </div>
@@ -322,89 +327,86 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
      </div>
 
      <div class="divider"></div>
-     <span class="section-label">オプション</span>
+     <span class="section-label">Options</span>
 
      <div class="toggle-row">
        <div class="toggle-info">
-         <div class="toggle-label-text">島を除去（最大輪郭のみ残す）</div>
-         <div class="toggle-desc">孤立した小さな輪郭を削除しステンシルに最適化</div>
+         <div class="toggle-label-text">Remove Islands (keep largest contour only)</div>
+         <div class="toggle-desc">Removes isolated small contours, optimized for stencils</div>
        </div>
        <label class="toggle"><input type="checkbox" id="ck-largest"><span class="toggle-track"></span></label>
      </div>
      <div class="toggle-row">
        <div class="toggle-info">
-         <div class="toggle-label-text">反転（明るい部分を検出）</div>
-         <div class="toggle-desc">白背景に黒イラスト→OFF / 黒背景に白→ON</div>
+         <div class="toggle-label-text">Invert (detect bright areas)</div>
+         <div class="toggle-desc">White bg + black art → OFF / Black bg + white art → ON</div>
        </div>
        <label class="toggle"><input type="checkbox" id="ck-invert"><span class="toggle-track"></span></label>
      </div>
      <div class="toggle-row">
        <div class="toggle-info">
-         <div class="toggle-label-text">ベジェ曲線（なめらか）</div>
-         <div class="toggle-desc">ONで曲線パス、OFFで直線のみ</div>
+         <div class="toggle-label-text">Bézier Curves (smooth)</div>
+         <div class="toggle-desc">ON: curved paths / OFF: straight lines only</div>
        </div>
        <label class="toggle"><input type="checkbox" id="ck-bezier" checked><span class="toggle-track"></span></label>
      </div>
 
-     <div style="margin-top:14px">
-       <button class="btn btn-retrace" id="btn-retrace" disabled onclick="runTrace(true)">
-         ↺ 設定を変えて再トレース
-       </button>
-     </div>
    </div>
    </details>
  </div>
 
  <div class="step-card inactive" id="card4">
-   <div class="card-header">
-     <div class="card-num gemini">AI</div>
-     <div class="card-title">Gemini AI 高品質変換</div>
-   </div>
+   <details>
+     <summary class="card-header" style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px">
+       <div class="card-num gemini">AI</div>
+       <div class="card-title">Gemini AI High-Quality Conversion</div>
+       <span class="card-subtitle">Tap to expand ▼</span>
+     </summary>
    <div class="card-body">
      <div class="hint" style="margin-bottom:16px">
-       <strong>gemini-2.5-flash-image</strong> に画像を渡し、ステンシル用白黒画像に変換してからSVGにトレースします。<br>
-       APIキーは<strong>このブラウザ内にのみ保存</strong>されサーバーへは一切送信されません。
+       <strong>gemini-2.5-flash-image</strong> converts your image to a stencil-ready black &amp; white image, then traces it to SVG.<br>
+       Your API key is <strong>stored only in this browser</strong> and never sent to any server.
      </div>
 
-     <!-- APIキー取得ガイダンス -->
+     <!-- API Key Guide -->
      <details id="api-guide" style="margin-bottom:16px">
        <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(0,170,255,.07);border:1px solid rgba(0,170,255,.25);border-radius:8px;user-select:none">
          <span style="font-size:15px">🔑</span>
-         <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:13px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent3)">APIキーの取得方法（無料・約1分）</span>
-         <span style="margin-left:auto;font-size:10px;color:var(--muted)">タップで開く ▼</span>
+         <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:13px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent3)">How to get an API key (free · ~1 min)</span>
+         <span style="margin-left:auto;font-size:10px;color:var(--muted)">Tap to expand ▼</span>
        </summary>
        <div style="margin-top:8px;padding:14px;background:rgba(0,170,255,.04);border:1px solid rgba(0,170,255,.15);border-radius:8px;border-top-left-radius:0;border-top-right-radius:0">
          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
            <div style="display:flex;align-items:flex-start;gap:10px">
              <span style="background:var(--accent3);color:#000;font-size:10px;font-weight:700;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span>
-             <span style="font-size:11px;color:var(--text);line-height:1.6">下のボタンから <strong style="color:var(--accent3)">Google AI Studio</strong> を開く</span>
+             <span style="font-size:11px;color:var(--text);line-height:1.6">Open <strong style="color:var(--accent3)">Google AI Studio</strong> using the button below</span>
            </div>
            <div style="display:flex;align-items:flex-start;gap:10px">
              <span style="background:var(--accent3);color:#000;font-size:10px;font-weight:700;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span>
-             <span style="font-size:11px;color:var(--text);line-height:1.6">Googleアカウントでログイン（既にログイン済みならスキップ）</span>
+             <span style="font-size:11px;color:var(--text);line-height:1.6">Sign in with your Google account (skip if already signed in)</span>
            </div>
            <div style="display:flex;align-items:flex-start;gap:10px">
              <span style="background:var(--accent3);color:#000;font-size:10px;font-weight:700;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span>
-             <span style="font-size:11px;color:var(--text);line-height:1.6"><strong>「APIキーを作成」</strong> をクリックしてキーをコピー</span>
+             <span style="font-size:11px;color:var(--text);line-height:1.6">Click <strong>"Create API key"</strong> and copy your key</span>
            </div>
            <div style="display:flex;align-items:flex-start;gap:10px">
              <span style="background:var(--accent3);color:#000;font-size:10px;font-weight:700;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">4</span>
-             <span style="font-size:11px;color:var(--text);line-height:1.6">このページに戻り、下の入力欄にペーストする</span>
+             <span style="font-size:11px;color:var(--text);line-height:1.6">Return to this page and paste the key in the field below</span>
            </div>
          </div>
          <a href="https://aistudio.google.com/apikey" target="_blank"
             style="display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#1a3a5c,#0d5c8a);color:#fff;border:1px solid var(--accent3);border-radius:8px;padding:11px 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.08em;text-decoration:none;transition:background .15s"
             onmouseover="this.style.background='linear-gradient(135deg,#1e4a70,#1070a0)'"
             onmouseout="this.style.background='linear-gradient(135deg,#1a3a5c,#0d5c8a)'">
-           🌐 Google AI Studio を開く（無料）
+           🌐 Open Google AI Studio (free)
          </a>
          <div style="margin-top:10px;font-size:10px;color:var(--muted);line-height:1.7">
-           💡 無料枠で十分使えます。クレジットカード不要。キーはこのブラウザ内にのみ保存され外部には送信されません。
+           💡 Free tier is sufficient. No credit card required. Key is stored only in this browser and never sent externally.
          </div>
        </div>
      </details>
 
-     <span class="section-label">Gemini API キー</span>
+     <span class="section-label">Gemini API Key</span>
      <div class="api-input-wrap">
        <input type="password" class="api-input" id="api-key-input"
               placeholder="AIza..." autocomplete="off" oninput="onApiKeyInput()">
@@ -413,77 +415,68 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
      <div class="api-status" id="api-status"></div>
 
      <div class="divider"></div>
-     <span class="section-label">清書スタイル（10種）</span>
+     <span class="section-label">Style (10 options)</span>
      <div class="chips" id="style-chips" style="margin-bottom:14px;flex-wrap:wrap">
-       <div class="chip active" data-style="standard">🎯 スタンダード</div>
-       <div class="chip" data-style="bold">💪 太め</div>
-       <div class="chip" data-style="connected">🔗 ブリッジ接続</div>
-       <div class="chip" data-style="military">🪖 ミリタリー</div>
-       <div class="chip" data-style="streetart">🎨 ストリートアート</div>
-       <div class="chip" data-style="minimal">⬛ ミニマル</div>
-       <div class="chip" data-style="woodcut">🪵 木版画風</div>
-       <div class="chip" data-style="technical">📐 テクニカル</div>
-       <div class="chip" data-style="vintage">📜 ヴィンテージ</div>
-       <div class="chip" data-style="graffiti">✍️ グラフィティ</div>
+       <div class="chip active" data-style="standard">🎯 Standard</div>
+       <div class="chip" data-style="bold">💪 Bold</div>
+       <div class="chip" data-style="connected">🔗 Bridge</div>
+       <div class="chip" data-style="military">🪖 Military</div>
+       <div class="chip" data-style="streetart">🎨 Street Art</div>
+       <div class="chip" data-style="minimal">⬛ Minimal</div>
+       <div class="chip" data-style="woodcut">🪵 Woodcut</div>
+       <div class="chip" data-style="technical">📐 Technical</div>
+       <div class="chip" data-style="vintage">📜 Vintage</div>
+       <div class="chip" data-style="graffiti">✍️ Graffiti</div>
      </div>
 
      <div class="gemini-progress" id="gemini-progress">
-       <div class="gemini-step" id="gs1"><span class="gs-icon">📤</span><span class="gs-label">Gemini 2.5 Flash Image に画像を送信中...</span></div>
-       <div class="gemini-step" id="gs2"><span class="gs-icon">🎨</span><span class="gs-label">ステンシル画像を受信中...</span></div>
-       <div class="gemini-step" id="gs3"><span class="gs-icon">✏️</span><span class="gs-label">SVGにトレース中...</span></div>
-       <div class="gemini-step" id="gs4"><span class="gs-icon">✅</span><span class="gs-label">完了</span></div>
+       <div class="gemini-step" id="gs1"><span class="gs-icon">📤</span><span class="gs-label">Sending image to Gemini 2.5 Flash Image...</span></div>
+       <div class="gemini-step" id="gs2"><span class="gs-icon">🎨</span><span class="gs-label">Receiving stencil image...</span></div>
+       <div class="gemini-step" id="gs3"><span class="gs-icon">✏️</span><span class="gs-label">Tracing to SVG...</span></div>
+       <div class="gemini-step" id="gs4"><span class="gs-icon">✅</span><span class="gs-label">Done</span></div>
      </div>
 
      <button class="btn btn-gemini" id="btn-gemini" disabled onclick="runGeminiEnhance()">
-       ✦ Gemini で高品質変換
+       ✦ Convert with Gemini
      </button>
 
-     <details style="margin-top:14px" id="debug-section">
-       <summary style="cursor:pointer;list-style:none;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent2);padding:6px 0;user-select:none">
-         🔧 Debug Mode ▼
-       </summary>
-       <div style="margin-top:10px">
-         <span class="section-label">カスタムプロンプト（空欄=デフォルト使用）</span>
-         <textarea id="debug-prompt" style="width:100%;height:90px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:10px;border-radius:6px;resize:vertical;outline:none;line-height:1.6" placeholder="例: Convert to bold black silhouette on pure white background..."></textarea>
-
+     <div style="margin-top:14px" id="debug-section">
+       <div>
          <div class="divider"></div>
-         <span class="section-label">Gemini 出力画像 — ペイント編集 / トリミング</span>
+         <span class="section-label">Gemini Output — Paint Edit / Crop</span>
          <div id="debug-img-wrap" style="display:none;margin-top:8px">
            <div id="debug-img-label" style="font-size:10px;color:var(--muted);margin-bottom:8px;padding:6px 8px;background:var(--surface2);border-radius:6px">—</div>
 
            <!-- PAINT TOOLBAR -->
            <div class="editor-toolbar" id="paint-toolbar">
-             <!-- ブラシ色 -->
-             <button class="etool white-active" id="btn-color-white" onclick="setPaintColor('white')" title="白ブラシ（黒を消す）">
-               <span class="brush-dot" style="background:#fff"></span>白
+             <button class="etool white-active" id="btn-color-white" onclick="setPaintColor('white')" title="White brush (erase black)">
+               <span class="brush-dot" style="background:#fff"></span>White
              </button>
-             <button class="etool" id="btn-color-black" onclick="setPaintColor('black')" title="黒ブラシ（ブリッジを追加）">
-               <span class="brush-dot" style="background:#222;border-color:#555"></span>黒
+             <button class="etool" id="btn-color-black" onclick="setPaintColor('black')" title="Black brush (add bridge)">
+               <span class="brush-dot" style="background:#222;border-color:#555"></span>Black
              </button>
              <div class="etool-sep"></div>
-             <!-- モード -->
-             <button class="etool active" id="btn-mode-paint" onclick="setEditorMode('paint')" title="ペイント">✏️ ペイント</button>
-             <button class="etool" id="btn-mode-crop" onclick="setEditorMode('crop')" title="トリミング">✂️ トリミング</button>
+             <button class="etool active" id="btn-mode-paint" onclick="setEditorMode('paint')" title="Paint">✏️ Paint</button>
+             <button class="etool" id="btn-mode-crop" onclick="setEditorMode('crop')" title="Crop">✂️ Crop</button>
              <div class="etool-sep"></div>
-             <button class="etool" onclick="undoPaint()" title="元に戻す">↩ Undo</button>
-             <button class="etool" onclick="resetPaint()" title="リセット">⟳ リセット</button>
+             <button class="etool" onclick="undoPaint()" title="Undo">↩ Undo</button>
+             <button class="etool" onclick="resetPaint()" title="Reset">⟳ Reset</button>
            </div>
-           <!-- ブラシサイズ -->
+           <!-- Brush size -->
            <div class="size-row" id="brush-size-row">
-             <span style="min-width:52px;text-align:left;font-size:10px;color:var(--muted)">ブラシ径</span>
+             <span style="min-width:52px;text-align:left;font-size:10px;color:var(--muted)">Brush</span>
              <input type="range" id="brush-size" min="4" max="40" value="12" oninput="updateBrushSize()">
              <span id="brush-size-val">12px</span>
            </div>
-           <!-- crop適用ボタン（cropモード時のみ） -->
+           <!-- crop apply buttons (crop mode only) -->
            <div id="crop-apply-row" style="display:none;gap:6px;margin-bottom:8px;display:none">
-             <button class="etool active" onclick="applyGeminiCrop()" style="flex:1">✓ この範囲でトリミング適用</button>
+             <button class="etool active" onclick="applyGeminiCrop()" style="flex:1">✓ Apply Crop</button>
              <button class="etool" onclick="cancelGeminiCrop()">✕</button>
            </div>
 
            <!-- EDITOR CANVAS -->
            <div class="editor-wrap" id="gemini-editor-wrap">
              <canvas id="paint-canvas"></canvas>
-             <!-- crop overlay (Gemini) -->
              <div class="crop-overlay" id="crop-overlay-gemini" style="display:none">
                <div class="crop-shade" id="csh-g-top"></div>
                <div class="crop-shade" id="csh-g-bottom"></div>
@@ -499,14 +492,15 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
            </div>
 
            <div style="display:flex;gap:6px;margin-top:8px">
-             <button onclick="retraceDebugImg()" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:8px;border-radius:6px;cursor:pointer">↺ この画像でトレース</button>
-             <button onclick="downloadDebugImg()" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:8px;border-radius:6px;cursor:pointer">↓ 画像を保存</button>
+             <button onclick="retraceDebugImg()" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:8px;border-radius:6px;cursor:pointer">↺ Re-trace this image</button>
+             <button onclick="downloadDebugImg()" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:8px;border-radius:6px;cursor:pointer">↓ Save image</button>
            </div>
          </div>
-         <div id="debug-img-empty" style="font-size:10px;color:var(--muted);padding:6px 0">Gemini実行後に結果がここに表示されます</div>
+         <div id="debug-img-empty" style="font-size:10px;color:var(--muted);padding:6px 0">Result will appear here after running Gemini</div>
        </div>
-     </details>
+     </div>
    </div>
+   </details>
  </div>
 
  <div class="step-card inactive" id="card3">
@@ -515,29 +509,43 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
      <div class="card-title">Result & Export</div>
    </div>
    <div class="card-body">
-     <span class="section-label">バリアントを選択</span>
+     <span class="section-label">Select Variant</span>
      <div class="variants-scroll" id="variants-scroll"></div>
 
      <div class="svg-preview-wrap">
-       <div class="svg-empty" id="svg-empty">画像を読み込むと自動でSVGを生成します</div>
+       <div class="svg-empty" id="svg-empty">Load an image to auto-generate SVG</div>
        <div id="svg-display"></div>
        <div class="svg-source-badge" id="svg-source-badge" style="display:none"></div>
      </div>
 
      <div class="divider"></div>
-     <span class="section-label">出力サイズ</span>
+     <span class="section-label">Output Size</span>
      <div class="chips" id="size-chips" style="margin-bottom:14px">
-       <div class="chip active" data-size="original">250mm（長辺）</div>
-       <div class="chip" data-size="100">100mm幅</div>
-       <div class="chip" data-size="50">50mm幅</div>
+       <div class="chip" data-size="original">250mm (long side)</div>
+       <div class="chip active" data-size="100">100mm width</div>
+       <div class="chip" data-size="50">50mm width</div>
      </div>
 
      <button class="btn btn-export" id="btn-export" disabled onclick="exportSVG()">
        ↓ Download default.svg
      </button>
      <div class="hint">
-       <strong>default.svg</strong> として保存後、MakerWorld Stencil Sheet Maker にアップロードして使用。<br>
-       SVGはmm単位で出力されます（長辺250mm基準 / FDMプリンター最大印刷サイズ）。
+       Save as <strong>default.svg</strong>, then upload to MakerWorld Stencil Sheet Maker.<br>
+       SVG is exported in mm units (250mm long-side / FDM max print size).
+     </div>
+
+     <div style="margin-top:16px;padding:12px 14px;background:rgba(0,170,255,.07);border:1px solid rgba(0,170,255,.25);border-radius:8px;display:flex;align-items:center;gap:10px">
+       <span style="font-size:18px">🖨️</span>
+       <div style="flex:1">
+         <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent3);margin-bottom:2px">Use with Stencil Sheet Maker</div>
+         <div style="font-size:10px;color:var(--muted);line-height:1.5">Upload your SVG to MakerWorld and 3D print your stencil sheet</div>
+       </div>
+       <a href="https://makerworld.com/ja/models/2781953-stencilsheetmaker" target="_blank"
+          style="background:linear-gradient(135deg,#1a3a5c,#0d5c8a);color:var(--accent3);border:1px solid var(--accent3);border-radius:6px;padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.06em;text-decoration:none;white-space:nowrap;transition:background .15s"
+          onmouseover="this.style.background='linear-gradient(135deg,#1e4a70,#1070a0)'"
+          onmouseout="this.style.background='linear-gradient(135deg,#1a3a5c,#0d5c8a)'">
+         Open ↗
+       </a>
      </div>
    </div>
  </div>
@@ -545,13 +553,13 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
  <div class="step-card" id="card5" style="display:none">
    <div class="card-header">
      <div class="card-num gemini">🕘</div>
-     <div class="card-title">Gemini 変換履歴</div>
+     <div class="card-title">Gemini Conversion History</div>
      <span class="card-subtitle" style="margin-left:auto">
-       <button onclick="clearHistory()" style="background:none;border:none;color:var(--muted);font-size:9px;cursor:pointer;font-family:inherit;letter-spacing:.06em;padding:0">全削除</button>
+       <button onclick="clearHistory()" style="background:none;border:none;color:var(--muted);font-size:9px;cursor:pointer;font-family:inherit;letter-spacing:.06em;padding:0">Clear all</button>
      </span>
    </div>
    <div class="card-body">
-     <div class="history-empty" id="hist-empty">まだ履歴がありません</div>
+     <div class="history-empty" id="hist-empty">No history yet</div>
      <div class="hist-grid" id="hist-grid"></div>
    </div>
  </div>
@@ -559,7 +567,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 </div>
 
 <div class="status-bar">
- <span class="msg ok" id="st-msg">画像を読み込んでください</span>
+ <span class="msg ok" id="st-msg">Load an image to get started</span>
  <span class="status-badge" id="st-badge">Ready</span>
 </div>
 
@@ -570,7 +578,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 const S = {
  imgEl: null, imgW: 0, imgH: 0, imgBase64: '',
  variants: [], selectedVariant: 0,
- variantCount: 5, exportSize: 'original',
+ variantCount: 5, exportSize: '100',
  geminiStyle: 'standard',
  svgSource: 'auto',
 };
@@ -614,7 +622,7 @@ document.getElementById('file-input').addEventListener('change', e=>{if(e.target
 function changeFile(){document.getElementById('file-input').click()}
 
 function loadFile(file) {
- setMsg('processing', '画像を読み込み中...');
+ setMsg('processing', 'Loading image...');
  const url = URL.createObjectURL(file);
  const img = new Image();
  img.onload = async () => {
@@ -648,7 +656,7 @@ function loadFile(file) {
    await runTrace(false);
  };
  img.onerror = () => {
-   showToast('画像の読み込みに失敗しました。\n対応形式: PNG · JPG · WEBP · GIF · BMP');
+   showToast('Failed to load image.\nSupported: PNG · JPG · WEBP · GIF · BMP');
    URL.revokeObjectURL(url);
  };
  img.src = url;
@@ -836,7 +844,7 @@ function traceImage(threshold, smooth, minArea, invert, useBezier, largestOnly) 
 
 async function runTrace(isManual) {
  if (!S.imgEl) return;
- const label = isManual ? '再トレース中...' : '自動トレース中...';
+ const label = isManual ? 'Re-tracing...' : 'Auto-tracing...';
  showSpinner(true, label);
  setMsg('processing', label);
  await new Promise(r => setTimeout(r, 30));
@@ -871,11 +879,11 @@ async function runTrace(isManual) {
    showResultCard();
    document.getElementById('btn-export').disabled = false;
    const v = S.variants[S.selectedVariant];
-   setMsg('ok', isManual ? `✓ 再トレース完了 — ${n}案から選択してください` : `✓ 自動変換完了 — 設定を変えるか Gemini で高品質変換できます`);
-   setBadge(`${v.pathCount}パス`);
+   setMsg('ok', isManual ? `✓ Re-trace done — ${n} variants available` : `✓ Auto-trace done — adjust settings or use Gemini for better results`);
+   setBadge(`${v.pathCount} paths`);
  } catch(e) {
-   setMsg('err', 'トレースエラー');
-   showToast(`エラーが発生しました:\n${e.message}`);
+   setMsg('err', 'Trace error');
+   showToast(`An error occurred:\n${e.message}`);
  }
  showSpinner(false);
 }
@@ -888,10 +896,10 @@ function onApiKeyInput() {
  localStorage.setItem('gemini_api_key', key);
  const st = document.getElementById('api-status');
  if (key.startsWith('AIza') && key.length > 20) {
-   st.textContent = '✓ APIキーが設定されました';
+   st.textContent = '✓ API key set successfully';
    st.className = 'api-status ok';
  } else if (key.length > 0) {
-   st.textContent = '⚠ AIzaで始まるキーを入力してください';
+   st.textContent = '⚠ Enter a key starting with AIza';
    st.className = 'api-status err';
  } else {
    st.className = 'api-status';
@@ -1022,7 +1030,7 @@ async function runGeminiEnhance() {
  if (!apiKey || !S.imgBase64) return;
 
  showGeminiProgress(true);
- setMsg('processing', 'Gemini でステンシル変換中...');
+ setMsg('processing', 'Converting with Gemini...');
 
  try {
    setGeminiStep(1, 'active');
@@ -1091,15 +1099,15 @@ async function runGeminiEnhance() {
    document.getElementById('btn-export').disabled = false;
    S.svgSource = 'gemini';
    showBadge('gemini');
-   setMsg('ok', `✓ Gemini変換完了 — ${S.variants[S.selectedVariant]?.pathCount || 0}パス`);
-   setBadge(`Gemini · ${S.variants[S.selectedVariant]?.pathCount || 0}パス`);
+   setMsg('ok', `✓ Gemini conversion done — ${S.variants[S.selectedVariant]?.pathCount || 0} paths`);
+   setBadge(`Gemini · ${S.variants[S.selectedVariant]?.pathCount || 0} paths`);
 
    // 履歴に追加
    addGeminiHistory(imgB64, imgMime, S.geminiStyle);
 
  } catch(e) {
-   setMsg('err', 'Gemini エラー: ' + e.message);
-   showToast(`Gemini API エラー:\n${e.message}`);
+   setMsg('err', 'Gemini error: ' + e.message);
+   showToast(`Gemini API error:\n${e.message}`);
  }
  showGeminiProgress(false);
 }
@@ -1161,7 +1169,7 @@ function showVariant(idx) {
  disp.innerHTML = v.svgStr;
  const svg = disp.querySelector('svg');
  if (svg) { svg.style.maxWidth = '100%'; svg.style.maxHeight = '260px'; }
- setBadge(`${v.pathCount}パス`);
+ setBadge(`${v.pathCount} paths`);
  showBadge(v.source === 'gemini' ? 'gemini' : 'auto');
 }
 
@@ -1215,7 +1223,7 @@ async function retraceDebugImg() {
  // paintCanvasの現在の内容（編集済み）をbase64化してトレース
  const pc = document.getElementById('paint-canvas');
  if (!pc.width) { if (!_dbgB64) return; }
- showSpinner(true, 'Gemini画像をトレース中...');
+ showSpinner(true, 'Tracing Gemini image...');
  await new Promise(r => setTimeout(r, 30));
  try {
    let b64, mime;
@@ -1228,8 +1236,8 @@ async function retraceDebugImg() {
    await traceFromBase64(b64, mime);
    renderVariants(); showVariant(S.selectedVariant); showResultCard();
    document.getElementById('btn-export').disabled = false;
-   showBadge('gemini'); setMsg('ok', '✓ Gemini画像をトレースしました');
- } catch(e) { showToast('トレースエラー: ' + e.message); }
+   showBadge('gemini'); setMsg('ok', '✓ Gemini image traced');
+ } catch(e) { showToast('Trace error: ' + e.message); }
  showSpinner(false);
 }
 
@@ -1557,7 +1565,7 @@ function exportSVG() {
  const a = document.createElement('a');
  a.href = URL.createObjectURL(blob); a.download = 'default.svg';
  a.click(); URL.revokeObjectURL(a.href);
- setMsg('ok', '✓ default.svg をダウンロードしました');
+ setMsg('ok', '✓ default.svg downloaded');
 }
 
 // ============================================================
@@ -1609,8 +1617,8 @@ async function loadFromHistory(h) {
    el.classList.toggle('active-hist', parseInt(el.dataset.id) === h.id);
  });
 
- showSpinner(true, '履歴からSVGを生成中...');
- setMsg('processing', '履歴画像をトレース中...');
+ showSpinner(true, 'Loading from history...');
+ setMsg('processing', 'Tracing history image...');
  await new Promise(r => setTimeout(r, 30));
  try {
    await traceFromBase64(h.b64, h.mime);
@@ -1619,13 +1627,13 @@ async function loadFromHistory(h) {
    showResultCard();
    document.getElementById('btn-export').disabled = false;
    showBadge('gemini');
-   setMsg('ok', `✓ 履歴から復元 — ${S.variants[S.selectedVariant]?.pathCount || 0}パス`);
-   setBadge(`履歴 · ${S.variants[S.selectedVariant]?.pathCount || 0}パス`);
+   setMsg('ok', `✓ Restored from history — ${S.variants[S.selectedVariant]?.pathCount || 0} paths`);
+   setBadge(`History · ${S.variants[S.selectedVariant]?.pathCount || 0} paths`);
 
    // デバッグエリアにも反映
    showDebugResult(h.b64, h.mime, null);
  } catch(e) {
-   showToast('履歴の読み込みに失敗しました:\n' + e.message);
+   showToast('Failed to load from history:\n' + e.message);
  }
  showSpinner(false);
 }
@@ -1643,7 +1651,7 @@ function clearHistory() {
  document.getElementById('card5').style.display = 'none';
 }
 
-function showSpinner(show, text='処理中...') {
+function showSpinner(show, text='Processing...') {
  document.getElementById('spinner').style.display = show ? 'flex' : 'none';
  document.getElementById('spinner-text').textContent = text;
 }
