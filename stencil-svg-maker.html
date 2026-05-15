@@ -179,6 +179,31 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 /* TOAST */
 .toast{display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#2a0800;border:1px solid var(--accent2);color:var(--accent2);font-size:11px;padding:12px 20px;border-radius:8px;z-index:300;max-width:90vw;text-align:center;line-height:1.6;white-space:pre-line;box-shadow:0 4px 20px rgba(0,0,0,.6)}
 
+/* ── IMAGE EDITOR (paint + crop) ── */
+.editor-wrap{position:relative;background:#111;border-radius:8px;overflow:hidden;margin-bottom:10px;touch-action:none}
+.editor-wrap canvas{display:block;max-width:100%;cursor:crosshair}
+/* crop overlay */
+.crop-overlay{position:absolute;inset:0;pointer-events:none}
+.crop-shade{position:absolute;background:rgba(0,0,0,.55)}
+.crop-box{position:absolute;border:2px solid var(--accent);box-sizing:border-box}
+.crop-handle{position:absolute;width:18px;height:18px;background:var(--accent);border-radius:3px;pointer-events:all;touch-action:none}
+.crop-handle.nw{top:-9px;left:-9px;cursor:nw-resize}
+.crop-handle.ne{top:-9px;right:-9px;cursor:ne-resize}
+.crop-handle.sw{bottom:-9px;left:-9px;cursor:sw-resize}
+.crop-handle.se{bottom:-9px;right:-9px;cursor:se-resize}
+/* toolbar */
+.editor-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.etool{background:var(--surface2);border:1.5px solid var(--border);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:6px 10px;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;min-height:34px;display:flex;align-items:center;gap:5px}
+.etool.active{border-color:var(--accent);color:var(--accent);background:rgba(232,255,0,.08)}
+.etool.white-active{border-color:#aaa;color:#fff;background:rgba(255,255,255,.1)}
+.etool.black-active{border-color:#888;color:#ccc;background:rgba(0,0,0,.4)}
+.etool:hover{border-color:var(--text);color:var(--text)}
+.etool-sep{width:1px;height:22px;background:var(--border);flex-shrink:0}
+.brush-dot{width:12px;height:12px;border-radius:50%;border:1.5px solid #666;flex-shrink:0}
+.size-row{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);margin-bottom:8px}
+.size-row input[type=range]{flex:1;padding:8px 0}
+.size-row span{min-width:30px;text-align:right;color:var(--accent);font-size:11px;font-weight:600}
+
 /* GEMINI HISTORY */
 #card5{order:5}
 .history-empty{font-size:10px;color:var(--muted);padding:16px 0;text-align:center}
@@ -229,7 +254,26 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
        <button class="chg" onclick="changeFile()">変更</button>
      </div>
      <div id="img-preview-wrap">
-       <canvas id="canvas-original"></canvas>
+       <div class="editor-toolbar" id="crop-toolbar-orig" style="display:none">
+         <button class="etool" id="btn-crop-orig" onclick="toggleCropMode('orig')">✂️ トリミング</button>
+         <button class="etool" id="btn-crop-apply-orig" onclick="applyCrop('orig')" style="display:none">✓ 適用</button>
+         <button class="etool" id="btn-crop-cancel-orig" onclick="cancelCrop('orig')" style="display:none">✕ キャンセル</button>
+       </div>
+       <div class="editor-wrap" id="orig-editor-wrap">
+         <canvas id="canvas-original"></canvas>
+         <div class="crop-overlay" id="crop-overlay-orig" style="display:none">
+           <div class="crop-shade" id="csh-orig-top"></div>
+           <div class="crop-shade" id="csh-orig-bottom"></div>
+           <div class="crop-shade" id="csh-orig-left"></div>
+           <div class="crop-shade" id="csh-orig-right"></div>
+           <div class="crop-box" id="crop-box-orig">
+             <div class="crop-handle nw" data-handle="nw" data-target="orig"></div>
+             <div class="crop-handle ne" data-handle="ne" data-target="orig"></div>
+             <div class="crop-handle sw" data-handle="sw" data-target="orig"></div>
+             <div class="crop-handle se" data-handle="se" data-target="orig"></div>
+           </div>
+         </div>
+       </div>
      </div>
    </div>
  </div>
@@ -366,12 +410,59 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
          <textarea id="debug-prompt" style="width:100%;height:90px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:10px;border-radius:6px;resize:vertical;outline:none;line-height:1.6" placeholder="例: Convert to bold black silhouette on pure white background..."></textarea>
 
          <div class="divider"></div>
-         <span class="section-label">Gemini 出力画像プレビュー</span>
+         <span class="section-label">Gemini 出力画像 — ペイント編集 / トリミング</span>
          <div id="debug-img-wrap" style="display:none;margin-top:8px">
-           <div id="debug-img-label" style="font-size:10px;color:var(--muted);margin-bottom:6px;padding:6px 8px;background:var(--surface2);border-radius:6px">—</div>
-           <img id="debug-gemini-img" style="max-width:100%;border-radius:6px;display:none;border:1px solid var(--border)" alt="Gemini出力">
+           <div id="debug-img-label" style="font-size:10px;color:var(--muted);margin-bottom:8px;padding:6px 8px;background:var(--surface2);border-radius:6px">—</div>
+
+           <!-- PAINT TOOLBAR -->
+           <div class="editor-toolbar" id="paint-toolbar">
+             <!-- ブラシ色 -->
+             <button class="etool white-active" id="btn-color-white" onclick="setPaintColor('white')" title="白ブラシ（黒を消す）">
+               <span class="brush-dot" style="background:#fff"></span>白
+             </button>
+             <button class="etool" id="btn-color-black" onclick="setPaintColor('black')" title="黒ブラシ（ブリッジを追加）">
+               <span class="brush-dot" style="background:#222;border-color:#555"></span>黒
+             </button>
+             <div class="etool-sep"></div>
+             <!-- モード -->
+             <button class="etool active" id="btn-mode-paint" onclick="setEditorMode('paint')" title="ペイント">✏️ ペイント</button>
+             <button class="etool" id="btn-mode-crop" onclick="setEditorMode('crop')" title="トリミング">✂️ トリミング</button>
+             <div class="etool-sep"></div>
+             <button class="etool" onclick="undoPaint()" title="元に戻す">↩ Undo</button>
+             <button class="etool" onclick="resetPaint()" title="リセット">⟳ リセット</button>
+           </div>
+           <!-- ブラシサイズ -->
+           <div class="size-row" id="brush-size-row">
+             <span style="min-width:52px;text-align:left;font-size:10px;color:var(--muted)">ブラシ径</span>
+             <input type="range" id="brush-size" min="4" max="40" value="12" oninput="updateBrushSize()">
+             <span id="brush-size-val">12px</span>
+           </div>
+           <!-- crop適用ボタン（cropモード時のみ） -->
+           <div id="crop-apply-row" style="display:none;gap:6px;margin-bottom:8px;display:none">
+             <button class="etool active" onclick="applyGeminiCrop()" style="flex:1">✓ この範囲でトリミング適用</button>
+             <button class="etool" onclick="cancelGeminiCrop()">✕</button>
+           </div>
+
+           <!-- EDITOR CANVAS -->
+           <div class="editor-wrap" id="gemini-editor-wrap">
+             <canvas id="paint-canvas"></canvas>
+             <!-- crop overlay (Gemini) -->
+             <div class="crop-overlay" id="crop-overlay-gemini" style="display:none">
+               <div class="crop-shade" id="csh-g-top"></div>
+               <div class="crop-shade" id="csh-g-bottom"></div>
+               <div class="crop-shade" id="csh-g-left"></div>
+               <div class="crop-shade" id="csh-g-right"></div>
+               <div class="crop-box" id="crop-box-gemini">
+                 <div class="crop-handle nw" data-handle="nw" data-target="gemini"></div>
+                 <div class="crop-handle ne" data-handle="ne" data-target="gemini"></div>
+                 <div class="crop-handle sw" data-handle="sw" data-target="gemini"></div>
+                 <div class="crop-handle se" data-handle="se" data-target="gemini"></div>
+               </div>
+             </div>
+           </div>
+
            <div style="display:flex;gap:6px;margin-top:8px">
-             <button onclick="retraceDebugImg()" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:8px;border-radius:6px;cursor:pointer">↺ この画像で再トレース</button>
+             <button onclick="retraceDebugImg()" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:8px;border-radius:6px;cursor:pointer">↺ この画像でトレース</button>
              <button onclick="downloadDebugImg()" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:8px;border-radius:6px;cursor:pointer">↓ 画像を保存</button>
            </div>
          </div>
@@ -505,6 +596,7 @@ function loadFile(file) {
    S.imgBase64 = await resizeToBase64(img, 300);
 
    document.getElementById('img-preview-wrap').style.display = 'block';
+   document.getElementById('crop-toolbar-orig').style.display = 'flex';
    document.getElementById('dropzone').style.display = 'none';
    const bar = document.getElementById('file-ok');
    bar.style.display = 'flex';
@@ -1071,41 +1163,345 @@ function showDebugResult(b64, mime, message) {
  const wrap  = document.getElementById('debug-img-wrap');
  const empty = document.getElementById('debug-img-empty');
  const label = document.getElementById('debug-img-label');
- const img   = document.getElementById('debug-gemini-img');
  wrap.style.display = 'block'; empty.style.display = 'none';
  document.getElementById('debug-section').open = true;
  if (b64) {
-   img.src = `data:${mime};base64,${b64}`; img.style.display = 'block';
-   label.textContent = `✓ Gemini出力画像 (${mime})`; label.style.color = 'var(--green)';
+   label.textContent = `✓ Gemini出力画像 (${mime}) — ペイントで編集できます`;
+   label.style.color = 'var(--green)';
+   loadIntoPaintCanvas(b64, mime);
  } else {
-   img.style.display = 'none';
    label.textContent = message || '—'; label.style.color = 'var(--accent2)';
  }
 }
 
 async function retraceDebugImg() {
- if (!_dbgB64) return;
- showSpinner(true, 'Gemini画像を再トレース中...');
+ // paintCanvasの現在の内容（編集済み）をbase64化してトレース
+ const pc = document.getElementById('paint-canvas');
+ if (!pc.width) { if (!_dbgB64) return; }
+ showSpinner(true, 'Gemini画像をトレース中...');
  await new Promise(r => setTimeout(r, 30));
  try {
-   await traceFromBase64(_dbgB64, _dbgMime || 'image/png');
+   let b64, mime;
+   if (pc.width) {
+     b64  = pc.toDataURL('image/png').split(',')[1];
+     mime = 'image/png';
+   } else {
+     b64 = _dbgB64; mime = _dbgMime || 'image/png';
+   }
+   await traceFromBase64(b64, mime);
    renderVariants(); showVariant(S.selectedVariant); showResultCard();
    document.getElementById('btn-export').disabled = false;
-   showBadge('gemini'); setMsg('ok', '✓ Gemini画像を再トレースしました');
- } catch(e) { showToast('再トレースエラー: ' + e.message); }
+   showBadge('gemini'); setMsg('ok', '✓ Gemini画像をトレースしました');
+ } catch(e) { showToast('トレースエラー: ' + e.message); }
  showSpinner(false);
 }
 
 function downloadDebugImg() {
- if (!_dbgB64) return;
- const a = document.createElement('a');
- a.href = `data:${_dbgMime || 'image/png'};base64,${_dbgB64}`;
- a.download = 'gemini_output.png'; a.click();
+ const pc = document.getElementById('paint-canvas');
+ if (pc.width) {
+   const a = document.createElement('a');
+   a.href = pc.toDataURL('image/png'); a.download = 'gemini_edited.png'; a.click();
+ } else if (_dbgB64) {
+   const a = document.createElement('a');
+   a.href = `data:${_dbgMime || 'image/png'};base64,${_dbgB64}`;
+   a.download = 'gemini_output.png'; a.click();
+ }
 }
 
 // ============================================================
-// EXPORT
+// PAINT EDITOR (Gemini出力画像のブラシ編集)
 // ============================================================
+const PE = {
+ canvas: null, ctx: null,
+ painting: false,
+ color: 'white',   // 'white' | 'black'
+ brushSize: 12,
+ history: [],      // Undo用 ImageData スタック (max 20)
+ mode: 'paint',    // 'paint' | 'crop'
+};
+
+function loadIntoPaintCanvas(b64, mime) {
+ const img = new Image();
+ img.onload = () => {
+   const wrap = document.getElementById('gemini-editor-wrap');
+   const cv   = document.getElementById('paint-canvas');
+   // 表示幅に合わせてスケール（最大500px）
+   const maxW = Math.min(wrap.clientWidth || 500, 500);
+   const scale = Math.min(1, maxW / img.naturalWidth);
+   cv.width  = Math.round(img.naturalWidth  * scale);
+   cv.height = Math.round(img.naturalHeight * scale);
+   const ctx = cv.getContext('2d');
+   ctx.drawImage(img, 0, 0, cv.width, cv.height);
+   PE.canvas = cv; PE.ctx = ctx;
+   PE.history = [];
+   bindPaintEvents();
+   setEditorMode('paint');
+ };
+ img.src = `data:${mime};base64,${b64}`;
+}
+
+function bindPaintEvents() {
+ const cv = PE.canvas;
+ // マウス
+ cv.addEventListener('mousedown',  paintStart);
+ cv.addEventListener('mousemove',  paintMove);
+ cv.addEventListener('mouseup',    paintEnd);
+ cv.addEventListener('mouseleave', paintEnd);
+ // タッチ
+ cv.addEventListener('touchstart', e=>{ e.preventDefault(); paintStart(e.touches[0]); }, {passive:false});
+ cv.addEventListener('touchmove',  e=>{ e.preventDefault(); paintMove(e.touches[0]); }, {passive:false});
+ cv.addEventListener('touchend',   paintEnd, {passive:false});
+}
+
+function getCanvasPos(e) {
+ const r = PE.canvas.getBoundingClientRect();
+ const scaleX = PE.canvas.width  / r.width;
+ const scaleY = PE.canvas.height / r.height;
+ return { x: (e.clientX - r.left) * scaleX, y: (e.clientY - r.top) * scaleY };
+}
+
+function paintStart(e) {
+ if (PE.mode !== 'paint') return;
+ // Undo用にスナップショット保存（最大20）
+ PE.history.push(PE.ctx.getImageData(0, 0, PE.canvas.width, PE.canvas.height));
+ if (PE.history.length > 20) PE.history.shift();
+ PE.painting = true;
+ const p = getCanvasPos(e);
+ PE.ctx.beginPath();
+ PE.ctx.arc(p.x, p.y, PE.brushSize / 2, 0, Math.PI * 2);
+ PE.ctx.fillStyle = PE.color === 'white' ? '#ffffff' : '#000000';
+ PE.ctx.fill();
+}
+
+function paintMove(e) {
+ if (!PE.painting || PE.mode !== 'paint') return;
+ const p = getCanvasPos(e);
+ PE.ctx.beginPath();
+ PE.ctx.arc(p.x, p.y, PE.brushSize / 2, 0, Math.PI * 2);
+ PE.ctx.fillStyle = PE.color === 'white' ? '#ffffff' : '#000000';
+ PE.ctx.fill();
+}
+
+function paintEnd() { PE.painting = false; }
+
+function setPaintColor(c) {
+ PE.color = c;
+ document.getElementById('btn-color-white').className = 'etool' + (c === 'white' ? ' white-active' : '');
+ document.getElementById('btn-color-black').className = 'etool' + (c === 'black' ? ' black-active' : '');
+}
+
+function updateBrushSize() {
+ PE.brushSize = parseInt(document.getElementById('brush-size').value);
+ document.getElementById('brush-size-val').textContent = PE.brushSize + 'px';
+}
+
+function undoPaint() {
+ if (!PE.history.length) return;
+ PE.ctx.putImageData(PE.history.pop(), 0, 0);
+}
+
+function resetPaint() {
+ if (!_dbgB64) return;
+ PE.history = [];
+ loadIntoPaintCanvas(_dbgB64, _dbgMime || 'image/png');
+}
+
+function setEditorMode(mode) {
+ PE.mode = mode;
+ const isPaint = mode === 'paint';
+ document.getElementById('btn-mode-paint').className = 'etool' + (isPaint  ? ' active' : '');
+ document.getElementById('btn-mode-crop').className  = 'etool' + (!isPaint ? ' active' : '');
+ document.getElementById('brush-size-row').style.display  = isPaint ? 'flex'  : 'none';
+ const cropApply = document.getElementById('crop-apply-row');
+ const cropOvl   = document.getElementById('crop-overlay-gemini');
+ if (!isPaint) {
+   cropApply.style.display = 'flex';
+   cropOvl.style.display   = 'block';
+   initCropBox('gemini');
+ } else {
+   cropApply.style.display = 'none';
+   cropOvl.style.display   = 'none';
+ }
+ PE.canvas && (PE.canvas.style.cursor = isPaint ? 'crosshair' : 'default');
+}
+
+// ============================================================
+// CROP ENGINE (元画像 & Gemini画像 共通)
+// ============================================================
+const CR = {
+ target: null,   // 'orig' | 'gemini'
+ dragging: null, // handle key or 'move'
+ box: {x:0,y:0,w:0,h:0},   // canvas座標
+ dragStart: {mx:0,my:0,bx:0,by:0,bw:0,bh:0},
+};
+
+function getTargetCanvas(t) {
+ return t === 'orig' ? document.getElementById('canvas-original')
+                     : document.getElementById('paint-canvas');
+}
+function getCropOverlay(t) {
+ return t === 'orig' ? document.getElementById('crop-overlay-orig')
+                     : document.getElementById('crop-overlay-gemini');
+}
+function getCropBox(t) {
+ return t === 'orig' ? document.getElementById('crop-box-orig')
+                     : document.getElementById('crop-box-gemini');
+}
+
+function initCropBox(target) {
+ CR.target = target;
+ const cv = getTargetCanvas(target);
+ if (!cv.width) return;
+ // 初期: 全体の80%
+ const pad = 0.1;
+ CR.box = { x: cv.width * pad, y: cv.height * pad,
+            w: cv.width * (1 - 2*pad), h: cv.height * (1 - 2*pad) };
+ renderCropBox(target);
+ // ハンドルにイベントをバインド
+ document.querySelectorAll(`[data-target="${target}"]`).forEach(h => {
+   h.addEventListener('mousedown',  e => cropHandleStart(e, h.dataset.handle, target));
+   h.addEventListener('touchstart', e => { e.preventDefault(); cropHandleStart(e.touches[0], h.dataset.handle, target); }, {passive:false});
+ });
+ // ボックス本体のドラッグ（移動）
+ const box = getCropBox(target);
+ box.addEventListener('mousedown',  e => { if(e.target === box) cropMoveStart(e, target); });
+ box.addEventListener('touchstart', e => { if(e.target === box){ e.preventDefault(); cropMoveStart(e.touches[0], target); } }, {passive:false});
+}
+
+function renderCropBox(target) {
+ const cv  = getTargetCanvas(target);
+ const ovl = getCropOverlay(target);
+ const box = getCropBox(target);
+ const {x,y,w,h} = CR.box;
+ const cw = cv.clientWidth  || cv.width;
+ const ch = cv.clientHeight || cv.height;
+ const scaleX = cw / cv.width, scaleY = ch / cv.height;
+ const px = x*scaleX, py = y*scaleY, pw = w*scaleX, ph = h*scaleY;
+
+ box.style.left   = px + 'px'; box.style.top    = py + 'px';
+ box.style.width  = pw + 'px'; box.style.height = ph + 'px';
+ // shades
+ const ids = target === 'orig'
+   ? ['csh-orig-top','csh-orig-bottom','csh-orig-left','csh-orig-right']
+   : ['csh-g-top','csh-g-bottom','csh-g-left','csh-g-right'];
+ const [top,bot,lft,rgt] = ids.map(id => document.getElementById(id));
+ top.style.cssText = `top:0;left:0;right:0;height:${py}px`;
+ bot.style.cssText = `top:${py+ph}px;left:0;right:0;bottom:0`;
+ lft.style.cssText = `top:${py}px;left:0;width:${px}px;height:${ph}px`;
+ rgt.style.cssText = `top:${py}px;left:${px+pw}px;right:0;height:${ph}px`;
+}
+
+function cropHandleStart(e, handle, target) {
+ CR.target = target; CR.dragging = handle;
+ const {x,y,w,h} = CR.box;
+ CR.dragStart = { mx: e.clientX, my: e.clientY, bx:x, by:y, bw:w, bh:h };
+ const mm = ev => cropHandleMove(ev, handle, target);
+ const mu = () => { document.removeEventListener('mousemove',mm); document.removeEventListener('mouseup',mu);
+                    document.removeEventListener('touchmove',tmo); document.removeEventListener('touchend',mu); };
+ const tmo = ev => { ev.preventDefault(); cropHandleMove(ev.touches[0], handle, target); };
+ document.addEventListener('mousemove', mm);
+ document.addEventListener('mouseup', mu);
+ document.addEventListener('touchmove', tmo, {passive:false});
+ document.addEventListener('touchend', mu);
+}
+
+function cropHandleMove(e, handle, target) {
+ const cv = getTargetCanvas(target);
+ const r  = cv.getBoundingClientRect();
+ const scaleX = cv.width / r.width, scaleY = cv.height / r.height;
+ const dx = (e.clientX - CR.dragStart.mx) * scaleX;
+ const dy = (e.clientY - CR.dragStart.my) * scaleY;
+ let {bx,by,bw,bh} = CR.dragStart;
+ const minSz = 20;
+ if (handle === 'nw') { bx+=dx; by+=dy; bw-=dx; bh-=dy; }
+ if (handle === 'ne') {          by+=dy; bw+=dx; bh-=dy; }
+ if (handle === 'sw') { bx+=dx;          bw-=dx; bh+=dy; }
+ if (handle === 'se') {                  bw+=dx; bh+=dy; }
+ // clamp
+ bw = Math.max(minSz, bw); bh = Math.max(minSz, bh);
+ bx = Math.max(0, Math.min(bx, cv.width  - bw));
+ by = Math.max(0, Math.min(by, cv.height - bh));
+ bw = Math.min(bw, cv.width  - bx);
+ bh = Math.min(bh, cv.height - by);
+ CR.box = {x:bx,y:by,w:bw,h:bh};
+ renderCropBox(target);
+}
+
+function cropMoveStart(e, target) {
+ CR.target = target; CR.dragging = 'move';
+ const {x,y,w,h} = CR.box;
+ CR.dragStart = { mx: e.clientX, my: e.clientY, bx:x, by:y, bw:w, bh:h };
+ const cv = getTargetCanvas(target);
+ const mm = ev => {
+   const r = cv.getBoundingClientRect();
+   const dx = (ev.clientX - CR.dragStart.mx) * (cv.width / r.width);
+   const dy = (ev.clientY - CR.dragStart.my) * (cv.height / r.height);
+   CR.box.x = Math.max(0, Math.min(CR.dragStart.bx + dx, cv.width  - CR.dragStart.bw));
+   CR.box.y = Math.max(0, Math.min(CR.dragStart.by + dy, cv.height - CR.dragStart.bh));
+   renderCropBox(target);
+ };
+ const mu = () => { document.removeEventListener('mousemove',mm); document.removeEventListener('mouseup',mu); };
+ document.addEventListener('mousemove', mm);
+ document.addEventListener('mouseup', mu);
+}
+
+// 元画像トリミング
+function toggleCropMode(target) {
+ const ovl = getCropOverlay(target);
+ const applyBtn  = document.getElementById(`btn-crop-apply-${target}`);
+ const cancelBtn = document.getElementById(`btn-crop-cancel-${target}`);
+ const cropBtn   = document.getElementById(`btn-crop-${target}`);
+ const isOn = ovl.style.display !== 'none';
+ if (isOn) {
+   ovl.style.display = 'none'; applyBtn.style.display='none'; cancelBtn.style.display='none';
+   cropBtn.classList.remove('active');
+ } else {
+   ovl.style.display = 'block'; applyBtn.style.display=''; cancelBtn.style.display='';
+   cropBtn.classList.add('active');
+   initCropBox(target);
+ }
+}
+
+function applyCrop(target) {
+ const cv = getTargetCanvas(target);
+ const {x,y,w,h} = CR.box;
+ const tmp = document.createElement('canvas');
+ tmp.width = Math.round(w); tmp.height = Math.round(h);
+ tmp.getContext('2d').drawImage(cv, x, y, w, h, 0, 0, tmp.width, tmp.height);
+ const ctx = cv.getContext('2d');
+ cv.width = tmp.width; cv.height = tmp.height;
+ ctx.drawImage(tmp, 0, 0);
+ // 元画像の場合はS.imgWHを更新してGemini送信用も再生成
+ if (target === 'orig') {
+   S.imgW = cv.width; S.imgH = cv.height;
+   S.imgBase64 = cv.toDataURL('image/jpeg', 0.92).split(',')[1];
+   runTrace(false);
+ }
+ getCropOverlay(target).style.display = 'none';
+ document.getElementById(`btn-crop-apply-${target}`).style.display='none';
+ document.getElementById(`btn-crop-cancel-${target}`).style.display='none';
+ document.getElementById(`btn-crop-${target}`).classList.remove('active');
+}
+
+function cancelCrop(target) {
+ getCropOverlay(target).style.display = 'none';
+ document.getElementById(`btn-crop-apply-${target}`).style.display='none';
+ document.getElementById(`btn-crop-cancel-${target}`).style.display='none';
+ document.getElementById(`btn-crop-${target}`).classList.remove('active');
+}
+
+// Geminiエディタ側のトリミング
+function applyGeminiCrop() {
+ applyCrop('gemini');
+ setEditorMode('paint');
+ // トリミング後の画像でdbg更新
+ _dbgB64 = document.getElementById('paint-canvas').toDataURL('image/png').split(',')[1];
+ _dbgMime = 'image/png';
+}
+
+function cancelGeminiCrop() { setEditorMode('paint'); }
+
+
 function exportSVG() {
  const v = S.variants[S.selectedVariant];
  if (!v) return;
