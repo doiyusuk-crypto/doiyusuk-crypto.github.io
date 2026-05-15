@@ -332,11 +332,18 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
      <div class="api-status" id="api-status"></div>
 
      <div class="divider"></div>
-     <span class="section-label">清書スタイル</span>
-     <div class="chips" id="style-chips" style="margin-bottom:14px">
-       <div class="chip active" data-style="standard">スタンダード</div>
-       <div class="chip" data-style="bold">太め・シンプル</div>
-       <div class="chip" data-style="fine">細かく精密</div>
+     <span class="section-label">清書スタイル（10種）</span>
+     <div class="chips" id="style-chips" style="margin-bottom:14px;flex-wrap:wrap">
+       <div class="chip active" data-style="standard">🎯 スタンダード</div>
+       <div class="chip" data-style="bold">💪 太め</div>
+       <div class="chip" data-style="connected">🔗 ブリッジ接続</div>
+       <div class="chip" data-style="military">🪖 ミリタリー</div>
+       <div class="chip" data-style="streetart">🎨 ストリートアート</div>
+       <div class="chip" data-style="minimal">⬛ ミニマル</div>
+       <div class="chip" data-style="woodcut">🪵 木版画風</div>
+       <div class="chip" data-style="technical">📐 テクニカル</div>
+       <div class="chip" data-style="vintage">📜 ヴィンテージ</div>
+       <div class="chip" data-style="graffiti">✍️ グラフィティ</div>
      </div>
 
      <div class="gemini-progress" id="gemini-progress">
@@ -392,7 +399,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
      <div class="divider"></div>
      <span class="section-label">出力サイズ</span>
      <div class="chips" id="size-chips" style="margin-bottom:14px">
-       <div class="chip active" data-size="original">元サイズ</div>
+       <div class="chip active" data-size="original">250mm（長辺）</div>
        <div class="chip" data-size="100">100mm幅</div>
        <div class="chip" data-size="50">50mm幅</div>
      </div>
@@ -401,7 +408,8 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
        ↓ Download default.svg
      </button>
      <div class="hint">
-       <strong>default.svg</strong> として保存後、MakerWorld Stencil Sheet Maker にアップロードして使用。
+       <strong>default.svg</strong> として保存後、MakerWorld Stencil Sheet Maker にアップロードして使用。<br>
+       SVGはmm単位で出力されます（長辺250mm基準 / FDMプリンター最大印刷サイズ）。
      </div>
    </div>
  </div>
@@ -493,7 +501,8 @@ function loadFile(file) {
    canvas.width = w; canvas.height = h;
    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
 
-   S.imgBase64 = await fileToBase64(file);
+   // Gemini送信用: 300px以下にリサイズ → 両辺≤384pxで258トークン固定化
+   S.imgBase64 = await resizeToBase64(img, 300);
 
    document.getElementById('img-preview-wrap').style.display = 'block';
    document.getElementById('dropzone').style.display = 'none';
@@ -514,6 +523,18 @@ function loadFile(file) {
    URL.revokeObjectURL(url);
  };
  img.src = url;
+}
+
+// Gemini送信用: 指定px以下にリサイズしてJPEGのbase64を返す
+// 両辺≤384pxにすることで入力トークンを258固定に抑える
+async function resizeToBase64(imgEl, maxDim = 300) {
+ const w0 = imgEl.naturalWidth, h0 = imgEl.naturalHeight;
+ const ratio = Math.min(1, maxDim / Math.max(w0, h0));
+ const w = Math.round(w0 * ratio), h = Math.round(h0 * ratio);
+ const cv = document.createElement('canvas');
+ cv.width = w; cv.height = h;
+ cv.getContext('2d').drawImage(imgEl, 0, 0, w, h);
+ return cv.toDataURL('image/jpeg', 0.92).split(',')[1];
 }
 
 async function fileToBase64(file) {
@@ -665,9 +686,15 @@ function toCubic(pts) {
  return d + ' Z';
 }
 
+// FDM印刷用: viewBoxはpx座標系のまま、width/heightをmm単位で出力
+// 長辺を250mm基準にスケール（FDMプリンター最大印刷サイズ）
+const FDM_MAX_MM = 250;
 function buildSVG(pathStrs, w, h) {
  const body = pathStrs.map(d => `  <path d="${d}" fill="black" fill-rule="evenodd"/>`).join('\n');
- return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">\n${body}\n</svg>`;
+ const scale = FDM_MAX_MM / Math.max(w, h);
+ const wMm = (w * scale).toFixed(2);
+ const hMm = (h * scale).toFixed(2);
+ return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${wMm}mm" height="${hMm}mm">\n${body}\n</svg>`;
 }
 
 // ============================================================
@@ -758,35 +785,107 @@ window.addEventListener('DOMContentLoaded', () => {
  if (saved) { document.getElementById('api-key-input').value = saved; onApiKeyInput(); }
 });
 
-// スタイル別プロンプト
+// FDM共通制約（全プロンプトに付加）
+const FDM_CONSTRAINT = `
+CRITICAL FDM 3D printer constraints (strictly follow):
+- Minimum line width: 1.5mm equivalent (nozzle diameter 0.4mm, printed at 250mm width)
+- No isolated floating islands — every black shape MUST be physically connected to at least one other black shape via a bridge or touch
+- Add thin connecting bridges (minimum 2mm wide) wherever shapes would otherwise float
+- No gaps or holes smaller than 2mm (they won't print cleanly)
+- Avoid sharp isolated spikes or peninsulas thinner than 1mm
+Output: pure black (#000000) on pure white (#FFFFFF) only. No grays. No text. No explanation.`;
+
+// スタイル別プロンプト（10種）
 const GEMINI_PROMPTS = {
- standard: `Convert this illustration into a printable stencil image for a 3D printer.
-Requirements:
-- Pure white (#FFFFFF) background
-- Pure black (#000000) for all shapes — no grays, no gradients
-- Solid black fills for dark areas (hair, hat, clothing)
-- Clear black outlines for face, body, and key facial features (eyes, nose, mouth, smile)
-- Remove the original background completely
-- All shapes must be connected to each other — avoid isolated floating pieces
-- Clean smooth edges
-Output: flat black and white image only. No text, no explanation.`,
 
- bold: `Convert this illustration into a bold stencil silhouette.
-Requirements:
-- Pure white background
-- Solid black fills only — simplified bold shapes
-- Remove all fine details, keep only the main recognizable silhouette
-- All shapes must be connected — no isolated floating pieces
-Output: bold black silhouette on white. No text.`,
+ standard: `Convert this image into a clean stencil for FDM 3D printing.
+Style: balanced — solid filled shapes with clear outlines.
+- Solid black fills for dark/main subject areas
+- Clear black outlines (2mm+ wide) for key features
+- Remove background completely
+- All black areas must be connected — add bridges where needed
+${FDM_CONSTRAINT}`,
 
- fine: `Convert this illustration into a detailed stencil image.
-Requirements:
-- Pure white background
-- Black outlines preserving fine details: eyes, expression, hair lines, clothing
-- Thin clean black lines on white background
-- Remove all colors and gradients, keep all detail
-- Avoid isolated floating shapes where possible
-Output: detailed black line art on white. No text.`
+ bold: `Convert this image into a bold silhouette stencil for FDM 3D printing.
+Style: maximum simplicity — thick solid shapes only.
+- Reduce to the most essential recognizable silhouette
+- All lines and shapes minimum 3mm wide
+- Merge nearby shapes that would be isolated
+- No fine details, no thin lines
+- Single unified black mass where possible, with bridges connecting separate parts
+${FDM_CONSTRAINT}`,
+
+ connected: `Convert this image into a fully-connected stencil optimized for FDM 3D printing.
+Style: engineer-first — every floating island MUST be bridged.
+- Identify all potentially isolated shapes (eyes, letters, inner holes, dots)
+- Add explicit rectangular or organic bridges (2–3mm wide) connecting each island to the nearest black shape
+- Prefer adding bridges that look intentional and artistic, not random
+- Use solid fills, not outlines
+- The result must be one single connected black shape with no floating pieces at all
+${FDM_CONSTRAINT}`,
+
+ military: `Convert this image into a military-style stencil for FDM 3D printing.
+Style: bold, high-contrast, graphic — like army equipment markings or military patches.
+- Hard-edged solid black shapes, no soft gradients
+- Angular, geometric simplification of organic curves
+- Strong contrast, minimal detail — readable from distance
+- Think: tank markings, helmet stencils, field equipment stamps
+- All shapes connected with angular bridge elements where needed
+${FDM_CONSTRAINT}`,
+
+ streetart: `Convert this image into a street art / graffiti stencil for FDM 3D printing.
+Style: urban, expressive — like Banksy or Shepard Fairey multi-layer stencils.
+- Bold black fills with expressive edge treatment
+- Allow some intentional rough or angular cutouts that give street art character
+- Keep key features as solid blacks — hair, shadows, clothing
+- Dramatic contrast, graphic and punchy
+- Connect floating shapes with artistic bridge elements that look like part of the design
+${FDM_CONSTRAINT}`,
+
+ minimal: `Convert this image into an ultra-minimal stencil for FDM 3D printing.
+Style: extreme reduction — as few shapes as possible while remaining recognizable.
+- Strip away everything except the absolute core identity of the subject
+- Maximum 3–4 distinct black regions total
+- Large solid masses, no detail lines at all
+- Think: logo-level simplicity, icon design
+- Connect all shapes into one unified structure
+${FDM_CONSTRAINT}`,
+
+ woodcut: `Convert this image into a woodcut / linocut print style stencil for FDM 3D printing.
+Style: traditional relief print aesthetic — bold parallel hatching and carved shapes.
+- Use thick black lines and hatching patterns (horizontal or diagonal stripes) for mid-tones
+- Strong black outlines around all shapes
+- White areas feel "carved out", black areas feel "raised"
+- Expressive, slightly rough edges — not perfectly smooth
+- All black elements must be connected via the hatching network
+${FDM_CONSTRAINT}`,
+
+ technical: `Convert this image into a technical / engineering diagram style stencil for FDM 3D printing.
+Style: precise, clean — like a technical drawing or PCB silkscreen.
+- Use outlines only (no solid fills) — all lines exactly 2mm wide
+- Clean geometric shapes, right angles preferred over curves
+- All outlines must be closed and connected to each other
+- Think: circuit board component outlines, technical manual illustrations
+- Add crosshatch or dot pattern for areas that need fill to maintain connectivity
+${FDM_CONSTRAINT}`,
+
+ vintage: `Convert this image into a vintage poster / retro label style stencil for FDM 3D printing.
+Style: 1920s–1950s commercial art aesthetic.
+- Bold outlines with solid fills — classic poster art look
+- Slightly stylized, idealized rendering (smooth, heroic proportions)
+- Strong blacks in shadows and key areas
+- Decorative border or frame elements that help connect floating shapes
+- Think: vintage whiskey labels, WPA posters, old circus typography
+${FDM_CONSTRAINT}`,
+
+ graffiti: `Convert this image into a throw-up graffiti style stencil for FDM 3D printing.
+Style: hand-rendered, energetic — like quick graffiti tags or throw-up letters.
+- Thick black outlines (3mm+) with white interior
+- Slightly irregular, hand-drawn quality edges
+- Bubble-letter treatment for any text or character shapes
+- Bold, immediate visual impact — works at large scale
+- All outlines connected in a continuous looping structure
+${FDM_CONSTRAINT}`
 };
 
 async function runGeminiEnhance() {
@@ -1011,10 +1110,15 @@ function exportSVG() {
  const v = S.variants[S.selectedVariant];
  if (!v) return;
  let s = v.svgStr;
+ // buildSVGで既にmm単位が設定済み。サイズ変更の場合は上書き
  if (S.exportSize !== 'original') {
    const tw = S.exportSize === '100' ? 100 : 50;
-   const th = ((v.h / v.w) * tw).toFixed(2);
-   s = s.replace(/width="[^"]*"/, `width="${tw}mm"`).replace(/height="[^"]*"/, `height="${th}mm"`);
+   const scale = FDM_MAX_MM / Math.max(v.w, v.h);
+   const aspect = v.h / v.w;
+   // 長辺基準でtw mmにリスケール
+   const wMm = (v.w >= v.h) ? tw : (tw / aspect).toFixed(2);
+   const hMm = (v.w >= v.h) ? (tw * aspect).toFixed(2) : tw;
+   s = s.replace(/width="[^"]*"/, `width="${wMm}mm"`).replace(/height="[^"]*"/, `height="${hMm}mm"`);
  }
  const blob = new Blob([s], { type: 'image/svg+xml' });
  const a = document.createElement('a');
